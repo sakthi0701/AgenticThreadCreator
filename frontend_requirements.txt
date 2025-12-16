@@ -1,0 +1,2 @@
+# This file is intentionally empty.
+# It is used to trick Netlify into NOT installing the heavy backend dependencies from the main requirements.txt.

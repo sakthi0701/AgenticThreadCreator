@@ -1,0 +1,10 @@
+[build]
+  # No build command needed for a simple HTML site
+  command = "echo 'Skipping backend build for frontend site'"
+  # Publish the root directory (where index.html is)
+  publish = "."
+
+[build.environment]
+  # Tell Netlify to look for dependencies in this empty file instead of requirements.txt
+  # This prevents it from trying (and failing) to install the backend Python packages.
+  PIP_REQUIREMENTS_FILE = "frontend_requirements.txt"
