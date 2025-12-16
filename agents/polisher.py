@@ -67,9 +67,9 @@ class PolisherAgent(Agent):
                  refined_body = [result.refined_body]
 
              return {
-                 "hook": result.refined_hook,
-                 "tweets": refined_body,
-                 "cta": result.refined_cta
+                 "refined_hook": result.refined_hook,
+                 "refined_tweets": refined_body,
+                 "refined_cta": result.refined_cta
              }
         except Exception as e:
              print(f"⚠️ PolisherAgent Full Refine failed: {e}")
