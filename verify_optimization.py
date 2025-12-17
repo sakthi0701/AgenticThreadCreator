@@ -33,6 +33,15 @@ def verify():
                 print(f"   Hook: {result['hook'][:50]}...")
                 print(f"   Tweets: {len(result['tweets'])} tweets generated.")
                 print(f"   CTA: {result['cta']}")
+                
+                # Verify Hook Duplication
+                first_tweet = result['tweets'][0].strip()
+                hook_text = result['hook'].strip()
+                if first_tweet == hook_text or (len(hook_text) > 20 and hook_text in first_tweet):
+                    print(f"❌ FAILED: First tweet is identical to hook. \nHook: {hook_text}\nTweet 1: {first_tweet}")
+                else:
+                    print("✅ PASSED: First tweet is distinct from hook.")
+
         else:
             print(f"❌ FAILED: Status {response.status_code}")
             print(response.text)

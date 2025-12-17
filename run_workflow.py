@@ -180,14 +180,15 @@ def polisher_executor(step_input: StepInput):
     """
     Step 5: Polish, Edit, and Generate Ancillaries.
     """
+    # Get Platform
+    platform = step_input.input.get("platform", "Twitter")
+
     # Get Draft from Drafter
     try:
         draft_content = step_input.get_step_output("draft_thread").content
         if isinstance(draft_content, str):
             draft_content = ast.literal_eval(draft_content)
-        # Get Trigger from Architect (need to reach back or pass it through)
-        # Ideally, we should get it from previous steps, but workflow step outputs are isolated.
-        # We can try to get it from 'run_architect' again.
+        # Get Trigger from Architect
         architect_content = step_input.get_step_output("run_architect").content
         if isinstance(architect_content, str):
              architect_content = ast.literal_eval(architect_content)
@@ -197,6 +198,25 @@ def polisher_executor(step_input: StepInput):
     except:
         tweets = ["Error parsing draft"]
         psych_trigger = "Social Proof"
+        
+    # SKIP Polishing for LinkedIn (Draft step already handled it via ChainOfThought)
+    if platform == "LinkedIn":
+        print("⏩ LinkedIn detected. Skipping Polisher step.")
+        # We need to fetch the CTA/Hook from the Draft Output if it exists
+        try:
+             draft_out = step_input.get_step_output("draft_thread").content
+             if isinstance(draft_out, str): draft_out = ast.literal_eval(draft_out)
+             
+             cta = draft_out.get("cta", "Check comments.")
+             # The body is in 'tweets'
+        except:
+             cta = "N/A"
+             
+        return {
+            "edited_tweets": tweets,
+            "tldr": "N/A",
+            "cta": cta 
+        }
         
     return polisher.act(draft_content=tweets, psychological_trigger=psych_trigger)
 
