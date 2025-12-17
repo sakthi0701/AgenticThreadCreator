@@ -114,7 +114,7 @@ def configure_llm():
 
     # Instantiate our smart wrapper
     smart_gemini = MultiKeyGemini(
-        model_name='gemini/gemini-2.5-flash',
+        model_name='gemini/gemini-flash-latest',
         keys=keys,
         max_tokens=8000,
         temperature=0.75,
@@ -222,7 +222,8 @@ class DraftLinkedIn(dspy.Signature):
     2. Short paragraphs (max 2 lines). 
     3. Include Concrete Examples for each point.
     4. Simple, direct language (Grade 8 level).
-    5. CRITICAL: Do NOT repeat the headline_hook. Start directly with the first insight/bridge.
+    5. Do NOT repeat the headline_hook. Start directly with the first insight/bridge.
+    6. CRITICAL:Do not use Em dashes or Markdown symbols(** or * or #).
     """)
     interactive_cta = dspy.OutputField(desc="A question ending the post. E.g., 'Which step will you take?' (NO hashtags here).")
 
