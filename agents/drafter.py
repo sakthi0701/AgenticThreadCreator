@@ -32,7 +32,6 @@ class DrafterAgent(Agent):
         print(f"🎨 DrafterAgent is now drafting a thread from outline (Platform: {platform})...")
         
         # Call the drafting module directly with the outline
-        # Pass the outline as a string, as required by the module
         result = self.agentic_model.drafting_module(
             topic=topic, 
             outline=str(outline), 
@@ -41,17 +40,27 @@ class DrafterAgent(Agent):
             platform=platform
         )
         
-        print(f"🐛 DEBUG RAW DRAFT: {result.tweet_thread!r}")
-        
-        # Safely parse the output back into a list
-        tweet_list = safe_parse_list(result.tweet_thread, fix_with_llm=True)
-        
-        if not tweet_list:
-             print("⚠️ Warning: Could not parse drafted thread, returning raw string.")
-             tweet_list = [result.tweet_thread]
+        # Handle Platform differences
+        if platform == "LinkedIn":
+             # result has 'post_body' (string) and 'structure_plan'
+             print(f"🐛 DEBUG RAW LINKEDIN: {getattr(result, 'post_body', 'Missing')!r}")
+             post_body = getattr(result, "post_body", "")
+             # Wrap in list to maintain contract with downstream agents
+             tweet_list = [post_body]
+             selected_hook = "LinkedIn Post" # Logic handled in post body
+             
+        else:
+            # Twitter: result has 'tweet_thread' (list of strings)
+            print(f"🐛 DEBUG RAW DRAFT: {result.tweet_thread!r}")
+            # Safely parse the output back into a list
+            tweet_list = safe_parse_list(result.tweet_thread, fix_with_llm=True)
+            if not tweet_list:
+                 print("⚠️ Warning: Could not parse drafted thread, returning raw string.")
+                 tweet_list = [result.tweet_thread]
+            selected_hook = getattr(result, "selected_hook", tweet_list[0] if tweet_list else "")
         
         print("✅ DrafterAgent finished drafting.")
         return {
             "tweets": tweet_list,
-            "selected_hook": getattr(result, "selected_hook", tweet_list[0] if tweet_list else "")
+            "selected_hook": selected_hook
         }

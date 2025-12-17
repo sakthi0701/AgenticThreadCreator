@@ -64,15 +64,17 @@ class MultiKeyGemini(dspy.LM):
             except Exception as e:
                 # Naive check for rate limits (check string content or specific error type if available)
                 error_str = str(e).lower()
-                if "429" in error_str or "quota" in error_str or "resource exhausted" in error_str:
+                if "429" in error_str or "quota" in error_str or "resource exhausted" in error_str or "503" in error_str or "unavailable" in error_str:
                     with self.lock:
                         # Double-check if another thread already rotated while we were waiting
                         # In a real rigorous impl, we might check timestamps, but here we just rotate.
-                        print(f"⚠️ Rate Limit hit on Key #{self.current_key_index + 1}. Rotate & Retry...")
+                        print(f"⚠️ Rate Limit/Overload hit on Key #{self.current_key_index + 1}. Rotate & Retry...")
                         self._rotate_client()
                     attempts += 1
-                    # Simple backoff - we don't want to hold the lock while sleeping
-                    time.sleep(self.retry_delay)
+                    
+                    # AGGRESSIVE BACKOFF for 503s or just in general to be safe
+                    print(f"⚠️ Cooling down for 1 seconds...")
+                    time.sleep(1)
                 else:
                     # Non-retryable error
                     raise e
@@ -159,11 +161,11 @@ class ArchitectSignature(dspy.Signature):
     raw_topic = dspy.InputField(desc="The user's original request.")
     research_context = dspy.InputField(desc="Key insights from SerpAPI research.")
     
-    refined_topic = dspy.OutputField(desc="A clear, compelling topic title.")
+    refined_topic = dspy.OutputField(desc="A specific, punchy title under 10 words. Use a Number or Strong Verb.")
     psychological_trigger = dspy.OutputField(desc="The ONE primary psychological principle to drive this thread (Select from list above).")
-    trigger_application = dspy.OutputField(desc="A brief strategy on HOW to apply that trigger to this specific topic.")
-    template_type = dspy.OutputField(desc="The best structural template (e.g., 'The Hero's Journey', 'The Listicle', 'The Contrarian Take').")
-    thread_outline = dspy.OutputField(desc="A step-by-step outline. Ensure the chosen trigger is woven into the structure.")
+    trigger_application = dspy.OutputField(desc="A 1-sentence strategy on HOW to apply that trigger to this command.")
+    template_type = dspy.OutputField(desc="The structural template (e.g., 'The Hero's Journey', 'The Listicle', 'The Contrarian Take').")
+    thread_outline = dspy.OutputField(desc="A list of 5-7 bullet points. Each point must represent one distinct tweet/idea.")
 
 class BatchHookSignature(dspy.Signature):
     """Generate 5 distinct viral hooks using specific psychological angles."""
@@ -176,15 +178,18 @@ class BatchHookSignature(dspy.Signature):
     3. The 'Social Proof' Hook (Focus on numbers/others).
     4. The 'Zeigarnik' Hook (Open a story loop/cliffhanger).
     5. The 'Contra-Competitive' Hook (Attack a common enemy or belief).
+    Constraint: No hook longer than 280 characters.
     """)
 
 class DraftThread(dspy.Signature):
     """Convert an outline into a full Twitter thread.
     
-    INSTRUCTIONS:
+    CONSTRAINTS:
     1. Review the 'Hooks List' and select the single BEST hook for engagement.
     2. Write the thread starting with that selected hook.
-    3. Maintain the psychological pressure throughout.
+    3. ONE IDEA PER TWEET. Do not combine multiple outline points into one tweet.
+    4. formatting: Use 1-2 distinct sentences per line break.
+    5. Voice: Active voice only. Ban words like "can", "helps to", "in order to".
     """
     topic = dspy.InputField()
     outline = dspy.InputField()
@@ -193,15 +198,35 @@ class DraftThread(dspy.Signature):
     platform = dspy.InputField(desc="'Twitter' or 'LinkedIn'")
     
     selected_hook = dspy.OutputField(desc="The exact text of the hook you chose.")
-    tweet_thread = dspy.OutputField(desc="A list of strings. Tweet 1 MUST be the selected hook.")
+    tweet_thread = dspy.OutputField(desc="A list of 6-12 strings. Tweet 1 MUST be the selected hook.")
+
+class DraftLinkedIn(dspy.Signature):
+    """
+    Draft a viral-style LinkedIn post. 
+    
+    CRITICAL CONSTRAINTS (ANTI-ROBOT):
+    1.  **Banned Words**: Do not use "delve", "landscape", "unveil", "game-changer", "tapestry", "demystify", "foster", "spearhead".
+    2.  **The "See More" Trap**: The first 3 lines must generate specific curiosity. Line 1 < 60 chars.
+    3.  **Visual Breathing Room**: No paragraph longer than 2 lines. Use bullet points for the "Meat".
+    4.  **Tone**: Conversational, slightly contrarian. No corporate stiffness.
+    """
+    
+    topic = dspy.InputField(desc="The broad topic.")
+    outline = dspy.InputField(desc="The core value points to cover.")
+    hooks_list = dspy.InputField(desc="Inspiration for hooks (don't copy exactly if they are too clickbaity).")
+    psychological_trigger = dspy.InputField(desc="The specific mental model (e.g., Loss Aversion, Social Proof).")
+    
+    # OUTPUTS
+    structure_plan = dspy.OutputField(desc="Plan the 'See More' gap: What is line 1? What is line 2? Why will they click?")
+    post_body = dspy.OutputField(desc="The full post in Markdown. No H1/H2 headers. Use Bold for emphasis.")
 
 class PolisherSignature(dspy.Signature):
-    """Review the draft. Maximize 'Cognitive Ease' (readability) and ensure the CTA uses 'Reciprocity'."""
+    """Review the draft. Improve readability and CTA strength."""
     draft_content = dspy.InputField(desc="The raw drafted thread.")
     psychological_trigger = dspy.InputField(desc="The trigger used, to ensure we don't edit out the persuasion.")
     
-    polished_content = dspy.OutputField(desc="The final list. Short sentences. Punchy. No corporate fluff.")
-    tldr = dspy.OutputField(desc="A summary tweet.")
+    polished_content = dspy.OutputField(desc="The final thread as a Python List of strings. ['Tweet 1', 'Tweet 2', ...]")
+    tldr = dspy.OutputField(desc="A summary tweet of exactly 1 sentence.")
     cta = dspy.OutputField(desc="A CTA that offers value FIRST (Reciprocity). E.g., 'Grab the free guide' vs 'Sign up'.")
 
 class RefineFullPost(dspy.Signature):
@@ -238,16 +263,28 @@ class HookModule(dspy.Module):
 class DraftingModule(dspy.Module):
     def __init__(self):
         super().__init__()
-        self.draft = dspy.Predict(DraftThread)
+        self.draft_twitter = dspy.Predict(DraftThread)
+        # CHANGED: Use ChainOfThought for "Reasoning" capabilities
+        self.draft_linkedin = dspy.ChainOfThought(DraftLinkedIn)
 
     def forward(self, topic, outline, hooks_list, psychological_trigger, platform="Twitter"):
-        return self.draft(
-            topic=topic, 
-            outline=str(outline), 
-            hooks_list=str(hooks_list),
-            psychological_trigger=psychological_trigger, 
-            platform=platform
-        )
+        if platform == "LinkedIn":
+             # Zero-Shot for LinkedIn with Chain of Thought
+             return self.draft_linkedin(
+                topic=topic,
+                outline=str(outline),
+                hooks_list=str(hooks_list),
+                psychological_trigger=psychological_trigger
+             )
+        else:
+            # Compiled Model for Twitter
+            return self.draft_twitter(
+                topic=topic, 
+                outline=str(outline), 
+                hooks_list=str(hooks_list),
+                psychological_trigger=psychological_trigger, 
+                platform=platform
+            )
 
 class PolisherModule(dspy.Module):
     def __init__(self):
@@ -271,43 +308,97 @@ class AgenticThreadCreator(dspy.Module):
         self.polisher_module = PolisherModule()
         self.refine_full_module = dspy.Predict(RefineFullPost)
     
-    # We mainly use the sub-modules individually in the agent workflow, 
-    # but this class serves as the model registry.
-    def forward(self, raw_topic, research_context):
+    def forward(self, raw_topic, research_context, platform="Twitter"):
         # 1. Architect Step
         architect_out = self.architect_module(raw_topic=raw_topic, research_context=research_context)
         
         # 2. Hook Step
-        # Using refined topic and key trigger for hook generation
         hook_out = self.hook_module(
             topic=architect_out.refined_topic, 
             primary_trigger=architect_out.psychological_trigger
         )
         
         # 3. Draft Step
+        # Join hooks with newlines for cleaner input to the LLM
+        hooks_str = "\n".join([f"- {h}" for h in hook_out.hooks_list]) if isinstance(hook_out.hooks_list, list) else str(hook_out.hooks_list)
+
         draft_out = self.drafting_module(
             topic=architect_out.refined_topic, 
             outline=architect_out.thread_outline, 
-            hooks_list=hook_out.hooks_list,
+            hooks_list=hooks_str,
             psychological_trigger=architect_out.psychological_trigger,
-            platform="Twitter"
+            platform=platform
         )
         
-        # 4. Polish Step
-        polisher_out = self.polisher_module(
-            draft_content=draft_out.tweet_thread,
-            psychological_trigger=architect_out.psychological_trigger
-        )
-        
+        # 4. Polish Step & Unification
+        if platform == "LinkedIn":
+             # LinkedIn Path (Zero-Shot)
+             post_body = draft_out.post_body
+             final_content = [post_body] 
+             
+             # LOGIC FIX: Extract the first line as the hook for analytics
+             # We split by double newline or period to find the first "punch"
+             try:
+                 lines = post_body.strip().split('\n')
+                 # Get the first non-empty line
+                 selected_hook = next((line for line in lines if line.strip()), "Hook extraction failed")
+                 # Truncate if it's too long (over 100 chars) to be a hook
+                 if len(selected_hook) > 100: selected_hook = selected_hook[:97] + "..."
+             except:
+                 selected_hook = "Hook extraction failed"
+
+             final_cta = "Check comments." # Default for LinkedIn if not generated
+             final_tldr = "N/A"
+             
+        else:
+             # Twitter Path (Compiled)
+             polisher_out = self.polisher_module(
+                draft_content=draft_out.tweet_thread,
+                psychological_trigger=architect_out.psychological_trigger
+             )
+             
+             # PARSING FIX: Ensure we have a list, not a string representation of a list
+             raw_tweets = polisher_out.polished_content
+             if isinstance(raw_tweets, str):
+                 try:
+                     # Safe evaluation to convert "['a','b']" string to list ['a','b']
+                     final_content = ast.literal_eval(raw_tweets)
+                 except:
+                     # Fallback if eval fails: treat as single string split by double newlines
+                     final_content = raw_tweets.split('\n\n')
+             else:
+                 final_content = raw_tweets
+
+             selected_hook = draft_out.selected_hook
+
+             # 5. DEDUPLICATION FIX: Remove the hook if it appears as the first tweet
+             # The DraftThread signature often enforces "Tweet 1 MUST be the selected hook"
+             # But the user wants them separated.
+             if isinstance(final_content, list) and len(final_content) > 0:
+                 # Check strict equality or fuzzier inclusion
+                 first_tweet = final_content[0].strip()
+                 hook_text = selected_hook.strip()
+                 
+                 # Logic: if first tweet IS the hook, or contains the hook entirely
+                 if first_tweet == hook_text or (len(hook_text) > 20 and hook_text in first_tweet):
+                     print("✂️ Detected Hook repetition in Tweet #1. Removing duplicate.")
+                     final_content = final_content[1:]
+                 elif len(final_content) > 0 and len(first_tweet) < 15 and "1/" in first_tweet:
+                     # Heuristic: sometimes "1/" is its own tweet? Unlikely but good safety.
+                     pass
+
+             final_cta = polisher_out.cta
+             final_tldr = polisher_out.tldr
+
         return dspy.Prediction(
             refined_topic=architect_out.refined_topic,
             psychological_trigger=architect_out.psychological_trigger,
             template_type=architect_out.template_type,
             thread_outline=architect_out.thread_outline,
             hooks_list=hook_out.hooks_list,
-            selected_hook=draft_out.selected_hook,
-            tweet_thread=draft_out.tweet_thread,
-            polished_content=polisher_out.polished_content,
-            tldr=polisher_out.tldr,
-            cta=polisher_out.cta
+            selected_hook=selected_hook,
+            tweet_thread=final_content, 
+            polished_content=final_content,
+            tldr=final_tldr,
+            cta=final_cta
         )
