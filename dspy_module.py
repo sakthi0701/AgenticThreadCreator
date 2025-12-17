@@ -114,7 +114,7 @@ def configure_llm():
 
     # Instantiate our smart wrapper
     smart_gemini = MultiKeyGemini(
-        model_name='gemini/gemini-2.5-flash',
+        model_name='gemini/gemini-flash-latest',
         keys=keys,
         max_tokens=8000,
         temperature=0.75,
