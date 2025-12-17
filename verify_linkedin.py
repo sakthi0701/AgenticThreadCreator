@@ -44,8 +44,32 @@ def verify():
             else:
                 print("✅ PASSED: No bold markers found.")
 
+
             print("--- FULL BODY PREVIEW ---")
             print(body_text[:500] + "...")
+            
+            # 3. Verify Refine (Simulated)
+            print("\n🧪 Testing Refine Endpoint...")
+            refine_data = {
+                "hook": hook,
+                "tweets": tweets,
+                "cta": cta,
+                "prompt": "Make it more professional.",
+                "platform": "LinkedIn"
+            }
+            refine_url = "http://localhost:8080/refine-full"
+            refine_res = requests.post(refine_url, json=refine_data, timeout=60)
+            
+            if refine_res.status_code == 200:
+                r_result = refine_res.json()
+                r_body = r_result.get("refined_tweets", [""])[0]
+                print("✅ Refine Success")
+                if "**" in r_body:
+                     print("❌ FAILED: Refine introduced bold markers.")
+                else:
+                     print("✅ PASSED: Refine respected 'No Bold' constraint.")
+            else:
+                print(f"❌ Refine Failed: {refine_res.status_code}")
             
         else:
             print(f"❌ FAILED: Status {response.status_code}")

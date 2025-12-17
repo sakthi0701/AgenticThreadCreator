@@ -71,10 +71,8 @@ class MultiKeyGemini(dspy.LM):
                         print(f"⚠️ Rate Limit/Overload hit on Key #{self.current_key_index + 1}. Rotate & Retry...")
                         self._rotate_client()
                     attempts += 1
-                    
-                    # AGGRESSIVE BACKOFF for 503s or just in general to be safe
-                    print(f"⚠️ Cooling down for 1 seconds...")
-                    #time.sleep(1)
+                    # Simple backoff - we don't want to hold the lock while sleeping
+                    time.sleep(self.retry_delay)
                 else:
                     # Non-retryable error
                     raise e
@@ -198,17 +196,18 @@ class DraftThread(dspy.Signature):
     platform = dspy.InputField(desc="'Twitter' or 'LinkedIn'")
     
     selected_hook = dspy.OutputField(desc="The exact text of the hook you chose.")
-    tweet_thread = dspy.OutputField(desc="A list of 6-12 strings. Tweet 1 MUST be the selected hook.")
+    tweet_thread = dspy.OutputField(desc="A list of strings. Tweet 1 MUST be the selected hook.")
 
 class DraftLinkedIn(dspy.Signature):
     """
-    Draft a viral-style LinkedIn post. 
+    Draft a viral-style LinkedIn post.
     
     CRITICAL CONSTRAINTS (ANTI-ROBOT):
-    1.  **Banned Words**: Do not use "delve", "landscape", "unveil", "game-changer", "tapestry", "demystify", "foster", "spearhead".
-    2.  **The "See More" Trap**: The first 3 lines must generate specific curiosity. Line 1 < 60 chars.
-    3.  **Visual Breathing Room**: No paragraph longer than 2 lines. Use bullet points for the "Meat".
-    4.  **Tone**: Conversational, slightly contrarian. No corporate stiffness.
+    1.  **Vocabulary**: Use simple, Grade 8 English. Avoid complex words like "leverage", "utilize", "foster".
+    2.  **Formatting**: NO bold (`**`) and NO italics (`*`). Plain text only.
+    3.  **The "See More" Trap**: The first 2 lines must generate curiosity.
+    4.  **Structure**: Short paragraphs (max 2 lines). Use whitespace.
+    5.  **Tone**: Conversational, slightly contrarian.
     """
     
     topic = dspy.InputField(desc="The broad topic.")
@@ -217,13 +216,13 @@ class DraftLinkedIn(dspy.Signature):
     psychological_trigger = dspy.InputField(desc="The specific mental model.")
     
     # OUTPUTS
-    headline_hook = dspy.OutputField(desc="The first 1-2 lines. Emotional, engaging, and under 60 chars. NO bold/markdown.")
+    headline_hook = dspy.OutputField(desc="The first 1-2 lines. Emotional, engaging, and under 60 chars. NO Markdown.")
     main_content = dspy.OutputField(desc="""The body. 
     1. NO asterisks/bolding/italics. 
     2. Short paragraphs (max 2 lines). 
     3. Include Concrete Examples for each point.
-    4. Use White Space between points.
-    5. Conversational Authority tone.
+    4. Simple, direct language (Grade 8 level).
+    5. CRITICAL: Do NOT repeat the headline_hook. Start directly with the first insight/bridge.
     """)
     interactive_cta = dspy.OutputField(desc="A question ending the post. E.g., 'Which step will you take?' (NO hashtags here).")
 
@@ -242,9 +241,10 @@ class RefineFullPost(dspy.Signature):
     current_body = dspy.InputField()
     current_cta = dspy.InputField()
     instruction = dspy.InputField()
+    platform = dspy.InputField(desc="Target platform (Twitter or LinkedIn).")
     
-    refined_hook = dspy.OutputField()
-    refined_body = dspy.OutputField()
+    refined_hook = dspy.OutputField(desc="Refined hook. LinkedIn: No formatting.")
+    refined_body = dspy.OutputField(desc="Refined body. LinkedIn: Grade 8 vocab, NO bold/italics.")
     refined_cta = dspy.OutputField()
 
 # ==============================================================================

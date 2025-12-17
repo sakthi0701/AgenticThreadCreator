@@ -49,16 +49,17 @@ class PolisherAgent(Agent):
                 "cta": "Error generating CTA"
             }
 
-    def refine_full_post(self, hook, tweets, cta, prompt):
+    def refine_full_post(self, hook, tweets, cta, prompt, platform="Twitter"):
         """Refines the entire post based on user instruction."""
-        print(f"✨ PolisherAgent is refining the FULL post...")
+        print(f"✨ PolisherAgent is refining the FULL post (Platform: {platform})...")
         try:
              # Call the module
              result = self.agentic_model.refine_full_module(
                  current_hook=hook,
                  current_body=str(tweets),
                  current_cta=cta,
-                 instruction=prompt
+                 instruction=prompt,
+                 platform=platform
              )
              
              # Parse body

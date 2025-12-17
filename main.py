@@ -48,6 +48,7 @@ class FullRefineRequest(BaseModel):
     tweets: list[str]
     cta: str
     prompt: str
+    platform: str = "Twitter" # New field
 
 # Health Check
 @app.get("/")
@@ -200,7 +201,8 @@ async def refine_full_endpoint(request: FullRefineRequest):
                 hook=request.hook,
                 tweets=request.tweets,
                 cta=request.cta,
-                prompt=request.prompt
+                prompt=request.prompt,
+                platform=request.platform
             )
             
         result = await run_in_threadpool(blocking_refine)
