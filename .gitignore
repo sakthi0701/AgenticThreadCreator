@@ -49,4 +49,5 @@ output.txt
 # OS
 .DS_Store
 Thumbs.db
-
+verify_linkedin.py
+verify_optimization.py
