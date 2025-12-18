@@ -237,7 +237,15 @@ class PolisherSignature(dspy.Signature):
     cta = dspy.OutputField(desc="A CTA that offers value FIRST (Reciprocity). E.g., 'Grab the free guide' vs 'Sign up'.")
 
 class RefineFullPost(dspy.Signature):
-    """Refine an entire post based on user feedback (Manual Override)."""
+    """Refine an entire post based on user feedback (Manual Override).
+    
+    CRITICAL INSTRUCTIONS:
+    1. If the instruction is about tone/style (e.g. "simpler vocabulary"), DO NOT SHORTEN the post.
+    2. Maintain the original structure (bullet points, lists) unless asked to remove them.
+    3. For LinkedIn: Keep the "Meat" of the post. Do not summarize deep technical points into broad platitudes.
+    4. PLATFORM RULES:
+       - LinkedIn: STRICTLY NO MARKDOWN. Remove all '**', '*', '##'. Use plain text only.
+    """
     current_hook = dspy.InputField()
     current_body = dspy.InputField()
     current_cta = dspy.InputField()
@@ -245,7 +253,7 @@ class RefineFullPost(dspy.Signature):
     platform = dspy.InputField(desc="Target platform (Twitter or LinkedIn).")
     
     refined_hook = dspy.OutputField(desc="Refined hook. LinkedIn: No formatting.")
-    refined_body = dspy.OutputField(desc="Refined body. LinkedIn: Grade 8 vocab, NO bold/italics.")
+    refined_body = dspy.OutputField(desc="Refined body. LinkedIn: Grade 8 vocab, NO bold/italics/markdown. MAINTAIN LENGTH & DETAIL.")
     refined_cta = dspy.OutputField()
 
 # ==============================================================================

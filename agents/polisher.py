@@ -67,6 +67,32 @@ class PolisherAgent(Agent):
              if not refined_body:
                  refined_body = [result.refined_body]
 
+             # --- SAFETY FILTER FOR LINKEDIN ---
+             if platform == "LinkedIn":
+                 import re
+                 def clean_linkedin_text(text):
+                     if not isinstance(text, str): return text
+                     # 1. Normalize bullets: "* item" -> "• item" (Aesthetic fix)
+                     text = re.sub(r'^\s*\*\s+', '• ', text, flags=re.MULTILINE)
+                     
+                     # 2. Remove Markdown artifacts
+                     text = text.replace('**', '') # Remove bolding
+                     text = text.replace('##', '') # Remove headers
+                     
+                     # 3. Cleanup remaining * (likely italics) but keep text
+                     # e.g. *italic* -> italic
+                     text = text.replace('*', '')
+                     
+                     return text.strip()
+
+                 result.refined_hook = clean_linkedin_text(result.refined_hook)
+                 result.refined_cta = clean_linkedin_text(result.refined_cta)
+                 
+                 if isinstance(refined_body, list):
+                     refined_body = [clean_linkedin_text(t) for t in refined_body]
+                 else:
+                     refined_body = clean_linkedin_text(refined_body)
+
              return {
                  "refined_hook": result.refined_hook,
                  "refined_tweets": refined_body,
