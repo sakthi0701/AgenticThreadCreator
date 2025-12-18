@@ -23,13 +23,14 @@ class PolisherAgent(Agent):
     def act(self, draft_content: list, psychological_trigger: str, topic: str = ""):
         """Edits thread and generates ancillary content."""
         print(f"✨ PolisherAgent is applying the final shine...")
-        
+        if isinstance(draft_content, list) and len(draft_content) == 1 and len(draft_content[0]) > 500:
+             print("⚠️ Detected Wall of Text. Attempting pre-split by paragraphs.")
+             # Split by double newlines to simulate distinct tweets
+             draft_content = [p for p in draft_content[0].split('\n\n') if p.strip()]
+
         try:
-            # Convert list to string for input
             draft_str = str(draft_content)
-            
             result = self.agentic_model.polisher_module(draft_content=draft_str, psychological_trigger=psychological_trigger)
-            
             # Parse the polished list
             polished_list = safe_parse_list(result.polished_content, fix_with_llm=True)
             if not polished_list:
@@ -40,7 +41,6 @@ class PolisherAgent(Agent):
                 "tldr": result.tldr,
                 "cta": result.cta
             }
-            
         except Exception as e:
             print(f"⚠️ PolisherAgent failed: {e}")
             return {

@@ -51,3 +51,5 @@ output.txt
 Thumbs.db
 verify_linkedin.py
 verify_optimization.py
+verify_fix_linkedin.py
+reproduce_linkedin_issue.py

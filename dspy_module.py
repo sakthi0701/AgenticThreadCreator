@@ -139,6 +139,35 @@ class GenerateSearchQuery(dspy.Signature):
     raw_topic = dspy.InputField(desc="The full, conversational user request.")
     search_query = dspy.OutputField(desc="A 3-5 keyword search query for Google, focused on the core entities.") 
 
+def clean_linkedin_text(text):
+    """
+    Cleans text to meet LinkedIn 'Anti-Robot' standards.
+    Removes bold (**), italics (*), headers (#), and em dashes (—).
+    Converts list items to bullets (•).
+    """
+    if not isinstance(text, str): return text
+    
+    import re
+    
+    # 1. Normalize bullets: "* item" -> "• item"
+    text = re.sub(r'^\s*\*\s+', '• ', text, flags=re.MULTILINE)
+    
+    # 2. Remove Bold (**)
+    text = text.replace('**', '')
+    
+    # 3. Remove Header marks (#)
+    text = text.replace('#', '')
+    
+    # 4. Remove Em Dashes (—) - replace with space or simple dash
+    # The user said "ban emdashes", usually replacing with " - " or " " is best for flow.
+    text = text.replace('—', ' - ')
+    
+    # 5. Cleanup remaining * (italics) but keep text
+    # e.g. *italic* -> italic
+    text = text.replace('*', '')
+    
+    return text.strip()
+
 # ==============================================================================
 # 3. PHASE-BASED OPTIMIZED SIGNATURES (5-Call Architecture)
 # ==============================================================================
@@ -182,21 +211,24 @@ class BatchHookSignature(dspy.Signature):
 class DraftThread(dspy.Signature):
     """Convert an outline into a full Twitter thread.
     
-    CONSTRAINTS:
+    STRICT CONSTRAINTS:
     1. Review the 'Hooks List' and select the single BEST hook for engagement.
     2. Write the thread starting with that selected hook.
-    3. ONE IDEA PER TWEET. Do not combine multiple outline points into one tweet.
-    4. formatting: Use 1-2 distinct sentences per line break.
-    5. Voice: Active voice only. Ban words like "can", "helps to", "in order to".
+    3. Output MUST be a valid list of strings: ["Tweet 1", "Tweet 2", ...].
+    4. MAX LENGTH: Every single string in the list must be UNDER 280 characters.
+    5. SPLITTING: If an outline point is long, split it into 2 separate tweets.
+    6. NO PREAMBLE: Do not write 'Here is the thread'. Just output the list.
+    7. EXCLUSION: Do NOT include the 'selected_hook' in the list. Start with the tweet AFTER the hook.
+    8. Voice: Active voice only. Ban words like "can", "helps to", "in order to".
     """
     topic = dspy.InputField()
     outline = dspy.InputField()
-    hooks_list = dspy.InputField(desc="List of generated hook options.")
+    hooks_list = dspy.InputField(desc="List of generated hook options for reference.")
     psychological_trigger = dspy.InputField(desc="The core persuasion principle to reinforce in the body text.")
     platform = dspy.InputField(desc="'Twitter' or 'LinkedIn'")
     
     selected_hook = dspy.OutputField(desc="The exact text of the hook you chose.")
-    tweet_thread = dspy.OutputField(desc="A list of strings. Tweet 1 MUST be the selected hook.")
+    tweet_thread = dspy.OutputField(desc="A list of strings.")
 
 class DraftLinkedIn(dspy.Signature):
     """
@@ -286,12 +318,19 @@ class DraftingModule(dspy.Module):
     def forward(self, topic, outline, hooks_list, psychological_trigger, platform="Twitter"):
         if platform == "LinkedIn":
              # Zero-Shot for LinkedIn with Chain of Thought
-             return self.draft_linkedin(
+             result = self.draft_linkedin(
                 topic=topic,
                 outline=str(outline),
                 hooks_list=str(hooks_list),
                 psychological_trigger=psychological_trigger
              )
+             
+             # Apply Cleaning Logic Here (Universal Fix)
+             result.headline_hook = clean_linkedin_text(result.headline_hook)
+             result.main_content = clean_linkedin_text(result.main_content)
+             result.interactive_cta = clean_linkedin_text(result.interactive_cta)
+             
+             return result
         else:
             # Compiled Model for Twitter
             return self.draft_twitter(
@@ -349,21 +388,24 @@ class AgenticThreadCreator(dspy.Module):
         # 4. Polish Step & Unification
         if platform == "LinkedIn":
              # LinkedIn Path (Zero-Shot)
-             post_body = draft_out.post_body
+             # Fix: Construct validity from the actual output fields of DraftLinkedIn
+             
+             # 1. Extract and clean individual components
+             hook = clean_linkedin_text(draft_out.headline_hook)
+             body = clean_linkedin_text(draft_out.main_content)
+             cta = clean_linkedin_text(draft_out.interactive_cta)
+             
+             # 2. Combine into a single post body for the final output list
+             # Ensure decent spacing
+             post_body = f"{hook}\n\n{body}\n\n{cta}"
+             
              final_content = [post_body] 
              
-             # LOGIC FIX: Extract the first line as the hook for analytics
-             # We split by double newline or period to find the first "punch"
-             try:
-                 lines = post_body.strip().split('\n')
-                 # Get the first non-empty line
-                 selected_hook = next((line for line in lines if line.strip()), "Hook extraction failed")
-                 # Truncate if it's too long (over 100 chars) to be a hook
-                 if len(selected_hook) > 100: selected_hook = selected_hook[:97] + "..."
-             except:
-                 selected_hook = "Hook extraction failed"
-
-             final_cta = "Check comments." # Default for LinkedIn if not generated
+             # 3. Set Hook (already extracted)
+             selected_hook = hook
+             
+             # 4. Set CTA
+             final_cta = cta
              final_tldr = "N/A"
              
         else:
@@ -388,20 +430,16 @@ class AgenticThreadCreator(dspy.Module):
              selected_hook = draft_out.selected_hook
 
              # 5. DEDUPLICATION FIX: Remove the hook if it appears as the first tweet
-             # The DraftThread signature often enforces "Tweet 1 MUST be the selected hook"
-             # But the user wants them separated.
              if isinstance(final_content, list) and len(final_content) > 0:
                  # Check strict equality or fuzzier inclusion
-                 first_tweet = final_content[0].strip()
-                 hook_text = selected_hook.strip()
+                 first_tweet = final_content[0].strip().lower()
+                 hook_text = selected_hook.strip().lower()
+                 is_duplicate = (hook_text in first_tweet) or (first_tweet in hook_text)
                  
-                 # Logic: if first tweet IS the hook, or contains the hook entirely
-                 if first_tweet == hook_text or (len(hook_text) > 20 and hook_text in first_tweet):
+                 # Similarity ratio check (optional, but 'in' usually suffices for exact repeats)
+                 if is_duplicate:
                      print("✂️ Detected Hook repetition in Tweet #1. Removing duplicate.")
-                     final_content = final_content[1:]
-                 elif len(final_content) > 0 and len(first_tweet) < 15 and "1/" in first_tweet:
-                     # Heuristic: sometimes "1/" is its own tweet? Unlikely but good safety.
-                     pass
+                     final_content = final_content[1:] # Slice off the first tweet
 
              final_cta = polisher_out.cta
              final_tldr = polisher_out.tldr
