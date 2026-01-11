@@ -896,7 +896,7 @@
                         style="margin-bottom:0;">
                     <button class="btn" style="width: auto;" onclick="refineFullPost()">Refine</button>
                     <button id="undoBtn" class="btn-secondary hidden" style="width: auto;" onclick="undoRefinement()"
-                        title="Undo"></button>↩️</button>
+                        title="Undo">↩️</button>
                 </div>
             </div>
 
@@ -1489,14 +1489,54 @@
             renderAll();
         }
 
+        // Helper: Extract clean text (strips diff artifacts if in diff mode)
+        function getCleanText(elementId) {
+            const el = document.getElementById(elementId);
+            if (!el) return "";
+
+            // If diff mode is active, we need to extract only the "new" text
+            if (document.getElementById('diffToggle').checked) {
+                const clone = el.cloneNode(true);
+                // Remove all <del> tags (old text)
+                clone.querySelectorAll('del').forEach(d => d.remove());
+                // Extract text from remaining content (includes <ins> and plain text)
+                const insElements = clone.querySelectorAll('ins');
+                insElements.forEach(ins => {
+                    ins.replaceWith(ins.textContent);
+                });
+                return clone.innerText;
+            }
+            return el.innerText;
+        }
+
         async function refineFullPost() {
             const prompt = document.getElementById('refinePrompt').value;
             if (!prompt) return;
 
+            // Detect platform
+            const platform = document.querySelector('input[name="platform"]:checked').value;
+
             // 1. Capture Current Manual Edits as 'Old' before refining
-            state.oldHook = document.getElementById('hookOutput').innerText;
-            state.oldCta = document.getElementById('ctaOutput').innerText;
-            state.oldTweets = Array.from(document.querySelectorAll('[id^="tweet-content-"]')).map(el => el.innerText);
+            state.oldHook = getCleanText('hookOutput');
+            state.oldCta = getCleanText('ctaOutput');
+
+            // CRITICAL FIX: Platform-aware body capture
+            if (platform === 'LinkedIn') {
+                const linkedinContent = getCleanText('linkedin-content');
+                state.oldTweets = linkedinContent ? [linkedinContent] : [];
+            } else {
+                // Twitter: Multiple boxes
+                const tweetElements = document.querySelectorAll('[id^="tweet-content-"]');
+                state.oldTweets = Array.from(tweetElements).map(el => {
+                    // Use getCleanText for each tweet box
+                    return getCleanText(el.id);
+                });
+            }
+
+            // Collect context
+            const topic = document.getElementById('topicInput').value;
+            const profileKey = document.getElementById('profileSelect').value;
+            const profileData = state.profiles[profileKey] || {};
 
             const btn = document.querySelector('#refinePrompt + button');
             const originalText = btn.innerText;
@@ -1511,7 +1551,12 @@
                         hook: state.oldHook,
                         tweets: state.oldTweets,
                         cta: state.oldCta,
-                        prompt: prompt
+                        prompt: prompt,
+                        platform: platform,
+                        topic: topic,
+                        audience: profileData.audience || "",
+                        tone: profileData.tone || "",
+                        voice_analysis: profileData.style_analysis || ""
                     })
                 });
                 const data = await response.json();

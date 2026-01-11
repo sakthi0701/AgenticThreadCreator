@@ -50,23 +50,35 @@ class PolisherAgent(Agent):
                 "cta": "Error generating CTA"
             }
 
-    def refine_full_post(self, hook, tweets, cta, prompt, platform="Twitter"):
+    def refine_full_post(self, hook, tweets, cta, prompt, platform="Twitter", topic="", audience="", tone=""):
         """
         Refines the entire post based on user instruction.
+        
+        Args:
+            hook: Current hook text
+            tweets: Current body content (list or string)
+            cta: Current CTA text
+            prompt: User's refinement instruction
+            platform: Target platform (Twitter/LinkedIn)
+            topic: Original topic for context
+            audience: Target audience for context
+            tone: Desired tone for context
         
         Raises:
             RuntimeError: If refinement fails
         """
         print(f"✨ PolisherAgent is refining the FULL post (Platform: {platform})...")
         try:
-             # Call the module
              # Call the wrapper method that handles Kimi context
              result = self.agentic_model.refine_post_action(
                  current_hook=hook,
                  current_body=str(tweets),
                  current_cta=cta,
                  instruction=prompt,
-                 platform=platform
+                 platform=platform,
+                 topic=topic,
+                 audience=audience,
+                 tone=tone
              )
              
              # Parse body

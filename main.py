@@ -87,11 +87,14 @@ class FullRefineRequest(BaseModel):
     tweets: list[str]
     cta: str
     prompt: str
-    tweets: list[str]
-    cta: str
-    prompt: str
-    platform: str = "Twitter" # New field
-    parent_id: Optional[str] = None # [NEW] Link to original generation
+    platform: str = "Twitter"
+    parent_id: Optional[str] = None # Link to original generation
+    
+    # Context fields for better refinement
+    topic: Optional[str] = ""
+    audience: Optional[str] = ""
+    tone: Optional[str] = ""
+    voice_analysis: Optional[str] = ""
 
 class LogInteractionRequest(BaseModel):
     """
@@ -380,7 +383,10 @@ async def refine_full_endpoint(request: FullRefineRequest):
                 tweets=request.tweets,
                 cta=request.cta,
                 prompt=request.prompt,
-                platform=request.platform
+                platform=request.platform,
+                topic=request.topic or "",
+                audience=request.audience or "",
+                tone=request.tone or ""
             )
             
         result = await run_in_threadpool(blocking_refine)

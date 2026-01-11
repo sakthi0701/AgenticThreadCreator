@@ -113,7 +113,14 @@ class MultiKeyGroq(dspy.LM):
         self.current_key_index = 0
         self.model_name = model_name
         self.kwargs = kwargs
+        
+        # Initialize the underlying model with the first key
         self._rotate_client(force_index=0)
+        
+        # Initialize parent
+        super().__init__(model=model_name)
+        
+        # Thread safety lock
         self.lock = threading.Lock()
 
     def _rotate_client(self, force_index=None):
@@ -422,21 +429,28 @@ class RefineFullPost(dspy.Signature):
     """Refine an entire post based on user feedback (Manual Override).
     
     CRITICAL INSTRUCTIONS:
-    1. If the instruction is about tone/style (e.g. "simpler vocabulary"), DO NOT SHORTEN the post.
-    2. Maintain the original structure (bullet points, lists) unless asked to remove them.
-    3. For LinkedIn: Keep the "Meat" of the post. Do not summarize deep technical points into broad platitudes.
-    4. PLATFORM RULES:
+    1. **MAINTAIN LENGTH**: Do NOT shorten, summarize, or compress the content unless the instruction explicitly says "make it shorter" or "condense".
+    2. **PRESERVE DETAIL**: Keep ALL examples, statistics, technical terms, and specific details. Do not replace concrete examples with vague generalities.
+    3. **CONTEXT AWARE**: Use the provided topic and audience to ensure the refinement stays on track and maintains relevance.
+    4. **STRUCTURE**: Maintain the original structure (bullet points, lists, paragraphs) unless asked to remove them.
+    5. **PLATFORM RULES**:
        - LinkedIn: STRICTLY NO MARKDOWN. Remove all '**', '*', '##'. Use plain text only.
+       - Twitter: Each tweet must be under 280 characters.
     """
     current_hook = dspy.InputField()
     current_body = dspy.InputField()
     current_cta = dspy.InputField()
-    instruction = dspy.InputField()
+    instruction = dspy.InputField(desc="The user's refinement request (e.g. 'add emojis', 'simpler vocabulary').")
     platform = dspy.InputField(desc="Target platform (Twitter or LinkedIn).")
     
-    refined_hook = dspy.OutputField(desc="Refined hook. LinkedIn: No formatting.")
-    refined_body = dspy.OutputField(desc="Refined body. LinkedIn: Grade 8 vocab, NO bold/italics/markdown. MAINTAIN LENGTH & DETAIL.")
-    refined_cta = dspy.OutputField()
+    # Context Fields
+    topic = dspy.InputField(desc="The original topic/subject matter.")
+    audience = dspy.InputField(desc="Target audience for this content.")
+    tone = dspy.InputField(desc="Desired tone/voice.")
+    
+    refined_hook = dspy.OutputField(desc="Refined hook. LinkedIn: No formatting. MAINTAIN original length unless instructed otherwise.")
+    refined_body = dspy.OutputField(desc="Refined body. CRITICAL: MAINTAIN LENGTH & DETAIL. Do not compress or summarize unless explicitly asked.")
+    refined_cta = dspy.OutputField(desc="Refined CTA.")
 
 # ==============================================================================
 # 4. DSPY MODULES
