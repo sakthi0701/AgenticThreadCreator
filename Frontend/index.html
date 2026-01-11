@@ -596,6 +596,157 @@
         .toast-icon {
             font-size: 1.2rem;
         }
+
+        /* --- MOBILE OPTIMIZATION (MAX-WIDTH: 768px) --- */
+        @media (max-width: 768px) {
+
+            /* Phase 1: Global Layout */
+            body {
+                padding: 20px 16px;
+            }
+
+            .container {
+                width: 100%;
+            }
+
+            h1 {
+                font-size: 2rem;
+                /* Scale down from 3rem */
+            }
+
+            .header p {
+                font-size: 1rem !important;
+            }
+
+            /* Phase 2: Spacing */
+            .card {
+                padding: 20px 16px;
+                /* Reduce padding from 32px */
+            }
+
+            .header {
+                margin-bottom: 30px;
+            }
+
+            /* Phase 3: Flexbox & Layout */
+            /* Profile Header & Settings */
+            #setupSection>.flex.justify-between {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            #setupSection>.flex.justify-between>div {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            /* Template Select Row */
+            #setupSection>textarea+.flex.justify-between {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            #setupSection>textarea+.flex.justify-between>select {
+                width: 100% !important;
+            }
+
+            /* Platform Toggle */
+            .platform-toggle {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .platform-option {
+                justify-content: center;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            /* Refine Section (Input + Buttons) */
+            #refinePrompt+button,
+            #refinePrompt+button+button {
+                width: 100% !important;
+                /* Stack buttons */
+            }
+
+            /* Optional: Adds a tiny gap between the Refine button and the Undo button when they stack */
+            #refinePrompt+button {
+                margin-bottom: 8px;
+            }
+
+            .card input[type="text"]#refinePrompt {
+                margin-bottom: 10px;
+            }
+
+            .card .flex.gap-2 {
+                flex-wrap: wrap;
+            }
+
+            #refinePrompt {
+                width: 100%;
+            }
+
+            /* Phase 4: Touch Targets & Modal */
+            .modal-content {
+                width: 95%;
+                margin: 20% auto;
+                padding: 20px;
+            }
+
+            button,
+            select,
+            input {
+                min-height: 44px;
+                /* Touch friendly */
+            }
+
+            .toast-container {
+                left: 50%;
+                transform: translateX(-50%);
+                bottom: 20px;
+                right: auto;
+                width: 90%;
+            }
+
+            .toast {
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            /* Phase 5: Visual Polish */
+            .tweet-box {
+                padding: 16px;
+            }
+
+            .tweet-actions {
+                position: relative;
+                top: 0;
+                right: 0;
+                margin-bottom: 10px;
+                justify-content: flex-end;
+                width: 100%;
+                border-bottom: 1px dashed var(--border);
+                padding-bottom: 8px;
+            }
+
+            /* Hide non-essential text */
+            .mobile-hidden-text {
+                display: none;
+            }
+
+            /* Output Section Header */
+            #outputSection>.flex.justify-between {
+                flex-direction: column;
+                gap: 10px;
+                align-items: stretch;
+            }
+
+            #outputSection>.flex.justify-between button {
+                width: 100% !important;
+            }
+        }
     </style>
 </head>
 
@@ -736,7 +887,7 @@
                     <h3 style="margin:0; color: var(--primary);">✨ Refine with AI</h3>
                     <label style="font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
                         <input type="checkbox" id="diffToggle" onchange="toggleDiffView()">
-                        Show Change Diff
+                        Show <span class="mobile-hidden-text">Change</span> Diff
                     </label>
                 </div>
                 <div class="flex gap-2">
@@ -745,7 +896,7 @@
                         style="margin-bottom:0;">
                     <button class="btn" style="width: auto;" onclick="refineFullPost()">Refine</button>
                     <button id="undoBtn" class="btn-secondary hidden" style="width: auto;" onclick="undoRefinement()"
-                        title="Undo">↩️</button>
+                        title="Undo"></button>↩️</button>
                 </div>
             </div>
 
@@ -782,7 +933,8 @@
                     <textarea id="p_style_analysis" class="form-input" rows="3"
                         placeholder="Click 'Learn My Style' to populate this..."></textarea>
                 </div>
-                <button class="btn" onclick="saveProfile()" style="margin-top: 10px;">Save Profile</button>
+                <button class="btn" onclick="saveProfile()" style="margin-top: 10px;">Save
+                    Profile</button>
             </div>
         </div>
     </div>
@@ -1011,7 +1163,13 @@
 
             // Auto Scroll
             brain.style.display = 'block';
+            document.getElementById('workingSection').classList.remove('hidden'); // Show container
             brain.scrollIntoView({ behavior: 'smooth' });
+
+            // Disable button to prevent double-submit
+            btn.disabled = true;
+            const btnText = document.getElementById('genBtnText');
+            if (btnText) btnText.innerText = "Forging...";
 
             document.getElementById('outputSection').classList.add('hidden');
 
@@ -1072,6 +1230,12 @@
                 showToast("Error: " + e.message, "error");
                 document.getElementById('setupSection').classList.remove('hidden');
                 document.getElementById('workingSection').classList.add('hidden');
+
+                // Re-enable button on error
+                const btn = document.getElementById('generateBtn');
+                if (btn) btn.disabled = false;
+                const btnText = document.getElementById('genBtnText');
+                if (btnText) btnText.innerText = "Forge Content";
             }
         }
 
@@ -1161,9 +1325,21 @@
             // because the whole container is hidden now.
         }
 
-        function handleCompletion(data) {
+        async function handleCompletion(data) {
+            // 1. Stop the fake timer
+            clearInterval(progressInterval);
+
+            // 2. Visually complete all steps (Satisfying "Green" flash)
+            for (let i = 1; i <= 5; i++) {
+                updateBrainStep(i, 'done');
+            }
+
+            // 3. Wait a tiny bit so user sees "All Done"
+            await new Promise(r => setTimeout(r, 600));
+
+            // 4. Update Data State
             state.currentHook = data.hook;
-            state.currentTweets = data.tweets; // List of strings
+            state.currentTweets = data.tweets;
             state.currentCta = data.cta;
             state.currentTldr = data.tldr;
             state.currentInteractionId = data.interaction_id; // [NEW] Store Correlation ID
@@ -1174,19 +1350,22 @@
             state.oldCta = data.cta;
             state.hasRefined = false;
 
-            // UI
+            // 5. Swap Views
             const working = document.getElementById('workingSection');
             if (working) working.classList.add('hidden');
 
             const output = document.getElementById('outputSection');
             if (output) output.classList.remove('hidden');
 
-            // Populate inputs
+            // 6. Render & Cleanup
             renderAll();
-
-            // Reset workflow steps for next time
-            clearInterval(progressInterval);
             resetBrain();
+
+            // Re-enable button
+            const btn = document.getElementById('generateBtn');
+            if (btn) btn.disabled = false;
+            const btnText = document.getElementById('genBtnText');
+            if (btnText) btnText.innerText = "Forge Content";
         }
 
         function simulateProgress() {
@@ -1195,7 +1374,8 @@
             // 2=Research, 3=Draft, 4=Polish, 5=Done
 
             progressInterval = setInterval(() => {
-                if (step > 4) {
+                // CHANGED: step > 5 allows Step 5 to become active
+                if (step > 5) {
                     clearInterval(progressInterval);
                     return;
                 }
@@ -1206,7 +1386,7 @@
                 updateBrainStep(step, 'active');
 
                 step++;
-            }, 5000); // Move every 5 seconds (assuming ~20s total gen time)
+            }, 4000); // OPTIONAL: Reduced to 4s to make it feel snappier
         }
 
         function renderAll() {
