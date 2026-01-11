@@ -53,3 +53,14 @@ verify_linkedin.py
 verify_optimization.py
 verify_fix_linkedin.py
 reproduce_linkedin_issue.py
+verify_api_types.py
+verify_metrics.py
+verify_parsing.py
+verify_voice.py
+
+#bmad
+_bmad
+_bmad-output
+.agent
+.claude
+

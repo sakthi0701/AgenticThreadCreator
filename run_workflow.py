@@ -5,6 +5,7 @@ import ast
 import os 
 from serpapi import GoogleSearch 
 import config
+from utils.metrics_tracker import MetricsTracker
 
 # Import our agents
 from agents.researcher import ResearchAgent
@@ -60,6 +61,9 @@ def research_executor(step_input: StepInput):
             print("⚠️ No SerpApi Key. Returning mock context.")
             return {"research_context": "No research performed (Missing Key)."}
 
+        # [NEW] Track Search Call
+        MetricsTracker.increment("serp_calls")
+
         params = {
             "engine": "google_ai_mode", 
             "q": query,
@@ -104,17 +108,17 @@ def architect_executor(step_input: StepInput):
         research_content = step_input.get_step_output("run_research").content
         if isinstance(research_content, str):
             research_content = ast.literal_eval(research_content)
+        
+        if not isinstance(research_content, dict):
+            raise TypeError(f"Expected dict, got {type(research_content)}")
+        
         research_context = research_content.get("research_context", "")
-    except:
+    except (ValueError, SyntaxError, TypeError) as e:
+        print(f"⚠️ Failed to parse research content: {e}")
         research_context = ""
         
     try:
         result = architect.act(raw_topic=raw_topic, research_context=research_context)
-        # Ensure we return the psychological_trigger
-        # The agent returns a dict, likely { "refined_topic": ..., "template": ..., "outline": ... }
-        # We need to make sure ArchitectAgent.act returns this new field too.
-        # Let's check agents/architect.py next.
-        # For now, we assume act returns it.
         return result
     except Exception as e:
         print(f"❌ Architect Step Failed: {e}")
@@ -129,14 +133,17 @@ def hook_executor(step_input: StepInput):
         architect_content = step_input.get_step_output("run_architect").content
         if isinstance(architect_content, str):
             architect_content = ast.literal_eval(architect_content)
-        topic = architect_content.get("refined_topic")
-        # Extract the psychological trigger
-        psych_trigger = architect_content.get("psychological_trigger", "Social Proof") # Default if missing
-    except:
-        topic = step_input.input.get("topic") # Fallback
-        psych_trigger = "Social Proof"
         
-    # Pass trigger as 'angle' (which HookSmithAgent maps to primary_trigger)
+        if not isinstance(architect_content, dict):
+            raise TypeError(f"Expected dict, got {type(architect_content)}")
+        
+        topic = architect_content.get("refined_topic")
+        psych_trigger = architect_content.get("psychological_trigger", "Social Proof")
+    except (ValueError, SyntaxError, TypeError) as e:
+        print(f"⚠️ Failed to parse architect content: {e}")
+        topic = step_input.input.get("topic")
+        psych_trigger = "Social Proof"
+
     return hook_smith.act(topic=topic, angle=psych_trigger)
 
 def draft_executor(step_input: StepInput):
@@ -151,10 +158,14 @@ def draft_executor(step_input: StepInput):
         if isinstance(architect_content, str):
             architect_content = ast.literal_eval(architect_content)
         
+        if not isinstance(architect_content, dict):
+            raise TypeError(f"Expected dict, got {type(architect_content)}")
+        
         outline = architect_content.get("outline")
         topic = architect_content.get("refined_topic")
         psych_trigger = architect_content.get("psychological_trigger", "Social Proof")
-    except:
+    except (ValueError, SyntaxError, TypeError) as e:
+        print(f"⚠️ Failed to parse architect content: {e}")
         outline = ["Error parsing outline"]
         topic = step_input.input.get("topic")
         psych_trigger = "Social Proof"
@@ -163,17 +174,26 @@ def draft_executor(step_input: StepInput):
     try:
         hook_content = step_input.get_step_output("generate_hooks").content
         if isinstance(hook_content, str):
-             hook_content = ast.literal_eval(hook_content)
+            hook_content = ast.literal_eval(hook_content)
+        
+        if not isinstance(hook_content, dict):
+            raise TypeError(f"Expected dict, got {type(hook_content)}")
+        
         hooks_list = hook_content.get("hooks", [])
-    except:
+    except (ValueError, SyntaxError, TypeError) as e:
+        print(f"⚠️ Failed to parse hooks content: {e}")
         hooks_list = []
         
+    # voice_analysis is likely in step_input.input or kwargs
+    va = step_input.input.get("voice_analysis", "")
+    
     return drafter.act(
         topic=topic, 
         outline=outline, 
         hooks_list=hooks_list, 
         psychological_trigger=psych_trigger, 
-        platform=platform
+        platform=platform,
+        voice_analysis=va
     )
 
 def polisher_executor(step_input: StepInput):
@@ -188,16 +208,37 @@ def polisher_executor(step_input: StepInput):
         draft_content = step_input.get_step_output("draft_thread").content
         if isinstance(draft_content, str):
             draft_content = ast.literal_eval(draft_content)
-        # Get Trigger from Architect
-        architect_content = step_input.get_step_output("run_architect").content
-        if isinstance(architect_content, str):
-             architect_content = ast.literal_eval(architect_content)
-        psych_trigger = architect_content.get("psychological_trigger", "Social Proof")
+        
+        # Get Refined Topic and Psychological Trigger from Architect
+        try:
+            architect_content = step_input.get_step_output("run_architect").content
+            if isinstance(architect_content, str):
+                architect_content = ast.literal_eval(architect_content)
+            
+            if not isinstance(architect_content, dict):
+                raise TypeError(f"Expected dict, got {type(architect_content)}")
+            
+            topic = architect_content.get("refined_topic") # Added topic extraction
+            psych_trigger = architect_content.get("psychological_trigger", "Social Proof")
+        except (ValueError, SyntaxError, TypeError) as e:
+            print(f"⚠️ Failed to parse architect content: {e}")
+            topic = step_input.input.get("topic") # Fallback for topic
+            psych_trigger = "Social Proof" # Fallback for psych_trigger
 
         tweets = draft_content.get("tweets")
-    except:
+    except (ValueError, SyntaxError, TypeError) as e: # Catch parsing errors for draft_content
+        print(f"⚠️ Failed to parse draft content: {e}")
         tweets = ["Error parsing draft"]
-        psych_trigger = "Social Proof"
+        # Ensure psych_trigger and topic are defined even if draft parsing fails
+        try:
+            architect_content = step_input.get_step_output("run_architect").content
+            if isinstance(architect_content, str):
+                architect_content = ast.literal_eval(architect_content)
+            psych_trigger = architect_content.get("psychological_trigger", "Social Proof")
+            topic = architect_content.get("refined_topic", step_input.input.get("topic"))
+        except (ValueError, SyntaxError, TypeError):
+            psych_trigger = "Social Proof"
+            topic = step_input.input.get("topic")
         
     # SKIP Polishing for LinkedIn (Draft step already handled it via ChainOfThought)
     if platform == "LinkedIn":
@@ -208,13 +249,15 @@ def polisher_executor(step_input: StepInput):
              if isinstance(draft_out, str): draft_out = ast.literal_eval(draft_out)
              
              cta = draft_out.get("cta", "Check comments.")
-             # The body is in 'tweets'
+             # Extract TLDR if available (from new signature)
+             tldr = draft_out.get("tldr", "N/A")
         except:
              cta = "N/A"
+             tldr = "N/A"
              
         return {
             "edited_tweets": tweets,
-            "tldr": "N/A",
+            "tldr": tldr,
             "cta": cta 
         }
         
@@ -244,11 +287,6 @@ agentic_workflow = Workflow(
             name="draft_thread",
             description="Draft the thread content.",
             executor=draft_executor
-        ),
-        Step(
-            name="run_polisher",
-            description="Edit thread and generate TLDR/CTA.",
-            executor=polisher_executor
         )
     ]
 )
@@ -289,7 +327,7 @@ if __name__ == "__main__":
         # Get results
         architect_out = get_step_content(final_result.step_results, "run_architect")
         hook_out = get_step_content(final_result.step_results, "generate_hooks")
-        polisher_out = get_step_content(final_result.step_results, "run_polisher")
+        draft_out = get_step_content(final_result.step_results, "draft_thread")
         
         print(f"🤖 TOPIC: {architect_out.get('refined_topic')}")
         print(f"🎁 TEMPLATE: {architect_out.get('template')}")
@@ -299,13 +337,13 @@ if __name__ == "__main__":
         
         print("-" * 80)
         print("📱 FINAL THREAD:")
-        tweets = polisher_out.get("edited_tweets", [])
+        tweets = draft_out.get("tweets", [])
         for t in tweets:
             print(f"- {t}\n")
             
         print("-" * 80)
-        print(f"📌 TL;DR: {polisher_out.get('tldr')}")
-        print(f"🎯 CTA: {polisher_out.get('cta')}")
+        print(f"📌 TL;DR: {draft_out.get('tldr')}")
+        print(f"🎯 CTA: {draft_out.get('cta')}")
         
     except Exception as e:
         print(f"\n❌ Error: {str(e)}")

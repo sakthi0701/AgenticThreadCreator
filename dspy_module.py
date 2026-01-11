@@ -2,13 +2,18 @@ import dspy
 import ast
 import os
 import threading
+import random
 from dotenv import load_dotenv
 import time
+from utils.metrics_tracker import MetricsTracker
+from utils.text_cleaning import clean_linkedin_text, clean_text_universal
+from config import settings
 
 load_dotenv()
 
+
 # ==============================================================================
-# 1. LLM CONFIGURATION (With Robust Key Rotation)
+# 1. LLM CONFIGURATION (Multi-Model: Gemini Flash + Kimi K2)
 # ==============================================================================
 
 class MultiKeyGemini(dspy.LM):
@@ -54,30 +59,113 @@ class MultiKeyGemini(dspy.LM):
         print(f"🔄 Switched to API Key #{self.current_key_index + 1} ({masked})")
 
     def basic_request(self, prompt=None, **kwargs):
-        """Delegates the request to the active LM with retry logic."""
+        """Delegates the request to the active LM with retry logic and exponential backoff."""
         attempts = 0
+        last_exception = None
+        
         while attempts < self.max_retries * len(self.keys):
             try:
                 # Delegate to the active dspy.LM instance
-                # The active_lm is a full dspy.LM, so we call it directly to handle adapters
-                return self.active_lm(prompt=prompt, **kwargs)
+                result = self.active_lm(prompt=prompt, **kwargs)
+                
+                # [FIXED] Only track successful calls
+                MetricsTracker.increment("llm_calls")
+                return result
+                
             except Exception as e:
-                # Naive check for rate limits (check string content or specific error type if available)
+                last_exception = e
                 error_str = str(e).lower()
-                if "429" in error_str or "quota" in error_str or "resource exhausted" in error_str or "503" in error_str or "unavailable" in error_str:
+                
+                # Check if retryable (rate limit or service unavailable)
+                is_rate_limit = any(x in error_str for x in [
+                    "429", "quota", "resource exhausted", "503", "unavailable", "rate limit"
+                ])
+                
+                if is_rate_limit and attempts < (self.max_retries * len(self.keys) - 1):
                     with self.lock:
-                        # Double-check if another thread already rotated while we were waiting
-                        # In a real rigorous impl, we might check timestamps, but here we just rotate.
-                        print(f"⚠️ Rate Limit/Overload hit on Key #{self.current_key_index + 1}. Rotate & Retry...")
                         self._rotate_client()
+                    
+                    # Exponential backoff with jitter (capped at 60s)
+                    delay = min(self.retry_delay * (2 ** attempts) + random.uniform(0, 1), 60)
+                    print(f"⚠️ Rate limit hit. Retrying in {delay:.1f}s...")
+                    time.sleep(delay)
                     attempts += 1
-                    # Simple backoff - we don't want to hold the lock while sleeping
-                    time.sleep(self.retry_delay)
                 else:
-                    # Non-retryable error
+                    # Non-retryable error or exhausted retries
                     raise e
         
-        raise RuntimeError("All API keys exhausted or max retries reached.")
+        raise last_exception or RuntimeError("All API keys exhausted or max retries reached.")
+
+    def __call__(self, prompt=None, **kwargs):
+        return self.basic_request(prompt=prompt, **kwargs)
+
+class MultiKeyGroq(dspy.LM):
+    """
+    Robust wrapper for Groq (Kimi) with Round-Robin Key Rotation.
+    """
+    def __init__(self, model_name, keys, **kwargs):
+        self.max_retries = kwargs.pop('max_retries', 3)
+        self.retry_delay = kwargs.pop('retry_delay', 2.0)
+        self.keys = keys
+        if not self.keys:
+            raise ValueError("MultiKeyGroq requires at least one API key.")
+            
+        self.current_key_index = 0
+        self.model_name = model_name
+        self.kwargs = kwargs
+        self._rotate_client(force_index=0)
+        self.lock = threading.Lock()
+
+    def _rotate_client(self, force_index=None):
+        if force_index is not None:
+             self.current_key_index = force_index
+        else:
+            self.current_key_index = (self.current_key_index + 1) % len(self.keys)
+            
+        active_key = self.keys[self.current_key_index]
+        masked = active_key[:4] + "..." + active_key[-4:]
+        
+        # Use Standard OpenAI-compatible client for Groq
+        self.active_lm = dspy.LM(
+            model=self.model_name,
+            api_key=active_key,
+            api_base="https://api.groq.com/openai/v1",
+            **self.kwargs
+        )
+        print(f"🔄 Kimi/Groq: Switched to Key #{self.current_key_index + 1} ({masked})")
+
+    def basic_request(self, prompt=None, **kwargs):
+        """Delegates the request to the active LM with retry logic and exponential backoff."""
+        attempts = 0
+        last_exception = None
+        
+        while attempts < self.max_retries * len(self.keys):
+            try:
+                result = self.active_lm(prompt=prompt, **kwargs)
+                
+                # [FIXED] Only track successful calls
+                MetricsTracker.increment("llm_calls")
+                return result
+                
+            except Exception as e:
+                last_exception = e
+                error_str = str(e).lower()
+                
+                is_rate_limit = any(x in error_str for x in ["429", "rate limit", "quota"])
+                
+                if is_rate_limit and attempts < (self.max_retries * len(self.keys) - 1):
+                    with self.lock:
+                        print(f"⚠️ Groq Rate Limit on Key #{self.current_key_index + 1}. Rotating...")
+                        self._rotate_client()
+                    
+                    # Exponential backoff with jitter
+                    delay = min(self.retry_delay * (2 ** attempts) + random.uniform(0, 1), 60)
+                    time.sleep(delay)
+                    attempts += 1
+                else:
+                    raise e
+                    
+        raise last_exception or RuntimeError("All Groq keys exhausted.")
 
     def __call__(self, prompt=None, **kwargs):
         return self.basic_request(prompt=prompt, **kwargs)
@@ -109,21 +197,73 @@ def configure_llm():
         
     # Idempotency check to prevent async race conditions
     if dspy.settings.lm and isinstance(dspy.settings.lm, MultiKeyGemini):
-        # Already configured, just return
-        return
+        print("ℹ️ DSPy already configured. Returning existing LMs.")
+        main_lm = dspy.settings.lm
+        
+        # Re-load Kimi keys
+        groq_keys = []
+        g_primary = os.getenv("GROQ_API_KEY")
+        if g_primary: groq_keys.append(g_primary)
+        j = 2
+        while True:
+            k = os.getenv(f"GROQ_API_KEY_{j}")
+            if not k: break
+            groq_keys.append(k)
+            j += 1
+            
+        kimi_lm = None
+        if groq_keys:
+             try:
+                kimi_lm = MultiKeyGroq(
+                    model_name="openai/moonshotai/kimi-k2-instruct-0905",
+                    keys=groq_keys,
+                    temperature=0.7,
+                    max_tokens=2000
+                )
+             except: pass
+             
+        return main_lm, kimi_lm
 
     # Instantiate our smart wrapper
     smart_gemini = MultiKeyGemini(
-        model_name='gemini/gemini-flash-latest',
+        model_name='gemini/gemini-3-flash-preview',
         keys=keys,
-        max_tokens=8000,
-        temperature=0.75,
-        max_retries=3
+        max_tokens=settings.gemini_max_tokens,
+        temperature=settings.gemini_temperature,
+        max_retries=settings.gemini_max_retries
     )
     
-    # Configure global settings
+    # Configure global settings (Default = Gemini Flash)
     dspy.settings.configure(lm=smart_gemini)
     print(f"✅ Configured DSPy with MultiKeyGemini ({len(keys)} keys found).")
+    
+    # Configure Secondary Model: Kimi K2 (via Groq Multikey)
+    groq_keys = []
+    # Scan for GROQ_API_KEY, GROQ_API_KEY_2, etc.
+    g_primary = os.getenv("GROQ_API_KEY")
+    if g_primary: groq_keys.append(g_primary)
+    
+    j = 2
+    while True:
+        k = os.getenv(f"GROQ_API_KEY_{j}")
+        if not k: break
+        groq_keys.append(k)
+        j += 1
+
+    kimi_lm = None
+    if groq_keys:
+        try:
+            kimi_lm = MultiKeyGroq(
+                model_name="openai/moonshotai/kimi-k2-instruct-0905",
+                keys=groq_keys,
+                temperature=settings.kimi_temperature,
+                max_tokens=settings.kimi_max_tokens
+            )
+            print(f"✅ Configured Secondary Model: Kimi K2 ({len(groq_keys)} keys found).")
+        except Exception as e:
+            print(f"⚠️ Failed to configure Kimi (Groq): {e}")
+    
+    return smart_gemini, kimi_lm
 
 
 # ==============================================================================
@@ -139,34 +279,28 @@ class GenerateSearchQuery(dspy.Signature):
     raw_topic = dspy.InputField(desc="The full, conversational user request.")
     search_query = dspy.OutputField(desc="A 3-5 keyword search query for Google, focused on the core entities.") 
 
-def clean_linkedin_text(text):
+class ClarifyIntent(dspy.Signature):
     """
-    Cleans text to meet LinkedIn 'Anti-Robot' standards.
-    Removes bold (**), italics (*), headers (#), and em dashes (—).
-    Converts list items to bullets (•).
+    Analyze the user's raw dump. If it lacks Tone or Audience, generate 3 clarifying questions.
+    If the intent is clear, output 'CLEAR'.
     """
-    if not isinstance(text, str): return text
+    raw_dump = dspy.InputField()
+    existing_profile = dspy.InputField(desc="The currently selected user profile traits.")
     
-    import re
+    status = dspy.OutputField(desc="'CLEAR' or 'NEEDS_INFO'")
+    questions = dspy.OutputField(desc="List[str] - A list of 3 distinct questions to ask the user. Return empty list if status is CLEAR.")
+
+class RefineStyle(dspy.Signature):
+    """
+    Analyze the provided content and the user's existing style.
+    Merge the new stylistic patterns into the existing style description to create a richer, more accurate profile.
+    Enhance, do not just overwrite. If current_style is empty, just analyze the content.
+    CRITICAL: Ignore structural elements specific to the content format (e.g. templates, headers, lists). Focus ONLY on the author's linguistic voice (vocabulary, rhythm, empathy, authority).
+    """
+    content = dspy.InputField(desc="The user's final written content.")
+    current_style = dspy.InputField(desc="The user's existing tone/style description.")
     
-    # 1. Normalize bullets: "* item" -> "• item"
-    text = re.sub(r'^\s*\*\s+', '• ', text, flags=re.MULTILINE)
-    
-    # 2. Remove Bold (**)
-    text = text.replace('**', '')
-    
-    # 3. Remove Header marks (#)
-    text = text.replace('#', '')
-    
-    # 4. Remove Em Dashes (—) - replace with space or simple dash
-    # The user said "ban emdashes", usually replacing with " - " or " " is best for flow.
-    text = text.replace('—', ' - ')
-    
-    # 5. Cleanup remaining * (italics) but keep text
-    # e.g. *italic* -> italic
-    text = text.replace('*', '')
-    
-    return text.strip()
+    style_summary = dspy.OutputField(desc="A concise string (10-15 words) merging old and new traits. E.g. 'Punchy, usage of metaphors, authoritative, prefers short paragraphs'.")
 
 # ==============================================================================
 # 3. PHASE-BASED OPTIMIZED SIGNATURES (5-Call Architecture)
@@ -220,6 +354,10 @@ class DraftThread(dspy.Signature):
     6. NO PREAMBLE: Do not write 'Here is the thread'. Just output the list.
     7. EXCLUSION: Do NOT include the 'selected_hook' in the list. Start with the tweet AFTER the hook.
     8. Voice: Active voice only. Ban words like "can", "helps to", "in order to".
+    9. POLISHING:
+       - NO Hashtags.
+       - NO Bold text (**).
+       - The LAST tweet must be a standalone Call To Action (value-first).
     """
     topic = dspy.InputField()
     outline = dspy.InputField()
@@ -227,8 +365,16 @@ class DraftThread(dspy.Signature):
     psychological_trigger = dspy.InputField(desc="The core persuasion principle to reinforce in the body text.")
     platform = dspy.InputField(desc="'Twitter' or 'LinkedIn'")
     
+    # Profile & Voice Inputs
+    audience = dspy.InputField(desc="Target audience.")
+    tone = dspy.InputField(desc="Desired tone.")
+    forbidden_words = dspy.InputField(desc="List of words to avoid.")
+    voice_analysis = dspy.InputField(desc="Deep stylistic analysis of the user's authentic voice. MIMIC THIS EXACTLY.", format=str)
+
     selected_hook = dspy.OutputField(desc="The exact text of the hook you chose.")
-    tweet_thread = dspy.OutputField(desc="A list of strings.")
+    tweet_thread = dspy.OutputField(desc="A list of strings. NO hashtags. NO bold.")
+    tldr = dspy.OutputField(desc="A 1-sentence summary of the main takeaway.")
+    cta = dspy.OutputField(desc="A value-first CTA (e.g. 'Grab the guide below').")
 
 class DraftLinkedIn(dspy.Signature):
     """
@@ -238,14 +384,19 @@ class DraftLinkedIn(dspy.Signature):
     1.  **Vocabulary**: Use simple, Grade 8 English. Avoid complex words like "leverage", "utilize", "foster".
     2.  **Formatting**: NO bold (`**`) and NO italics (`*`). Plain text only.
     3.  **The "See More" Trap**: The first 2 lines must generate curiosity.
-    4.  **Structure**: Short paragraphs (max 2 lines). Use whitespace.
-    5.  **Tone**: Conversational, slightly contrarian.
+    4.  **Structure**: MIX paragraph lengths. Use 1-line sentences for impact, but GROUP related thoughts into 2-3 line paragraphs. Do NOT write every single sentence on a new line.
+    5.  **Voice**: Conversational, personal, and authoritative.
+    6.  **TL;DR**: End with a 2-sentence summary of the main takeaway.
     """
-    
     topic = dspy.InputField(desc="The broad topic.")
     outline = dspy.InputField(desc="The core value points to cover.")
     hooks_list = dspy.InputField(desc="Inspiration for hooks.")
     psychological_trigger = dspy.InputField(desc="The specific mental model.")
+    
+    # Profile Inputs
+    audience = dspy.InputField(desc="Audience Callout: Immediately after the hook, specify who this is for.")
+    tone = dspy.InputField(desc="Tone: Ban absolutes. Use measured language.")
+    forbidden_words = dspy.InputField(desc="Words to strictly avoid.")
     
     # OUTPUTS
     headline_hook = dspy.OutputField(desc="The first 1-2 lines. Emotional, engaging, and under 60 chars. NO Markdown.")
@@ -255,18 +406,17 @@ class DraftLinkedIn(dspy.Signature):
     3. Include Concrete Examples for each point.
     4. Simple, direct language (Grade 8 level).
     5. Do NOT repeat the headline_hook. Start directly with the first insight/bridge.
-    6. CRITICAL:Do not use Em dashes or Markdown symbols(** or * or #).
+    6. CRITICAL: Do not use Em dashes or Markdown symbols (** or * or #).
+    7. ZERO REDUNDANCY: The 'main_content' MUST NOT start with the hook. It must follow immediately after. If the hook is 'X', the body must start with 'Y', not 'X... Y' because the hook is shown seperately before the body.
     """)
     interactive_cta = dspy.OutputField(desc="A question ending the post. E.g., 'Which step will you take?' (NO hashtags here).")
+    tldr = dspy.OutputField(desc="A 1-sentence summary of the main takeaway for metadata purposes.")
 
 class PolisherSignature(dspy.Signature):
-    """Review the draft. Improve readability and CTA strength."""
-    draft_content = dspy.InputField(desc="The raw drafted thread.")
-    psychological_trigger = dspy.InputField(desc="The trigger used, to ensure we don't edit out the persuasion.")
-    
-    polished_content = dspy.OutputField(desc="The final thread as a Python List of strings. ['Tweet 1', 'Tweet 2', ...]")
-    tldr = dspy.OutputField(desc="A summary tweet of exactly 1 sentence.")
-    cta = dspy.OutputField(desc="A CTA that offers value FIRST (Reciprocity). E.g., 'Grab the free guide' vs 'Sign up'.")
+    """DEPRECATED: Merged into DraftThread."""
+    draft_content = dspy.InputField()
+    psychological_trigger = dspy.InputField()
+    polished_content = dspy.OutputField()
 
 class RefineFullPost(dspy.Signature):
     """Refine an entire post based on user feedback (Manual Override).
@@ -315,31 +465,73 @@ class DraftingModule(dspy.Module):
         # CHANGED: Use ChainOfThought for "Reasoning" capabilities
         self.draft_linkedin = dspy.ChainOfThought(DraftLinkedIn)
 
-    def forward(self, topic, outline, hooks_list, psychological_trigger, platform="Twitter"):
+    def forward(self, topic, outline, hooks_list, psychological_trigger, platform="Twitter", audience="", tone="", forbidden_words="", voice_analysis=""):
         if platform == "LinkedIn":
              # Zero-Shot for LinkedIn with Chain of Thought
              result = self.draft_linkedin(
                 topic=topic,
                 outline=str(outline),
                 hooks_list=str(hooks_list),
-                psychological_trigger=psychological_trigger
+                psychological_trigger=psychological_trigger,
+                audience=audience,
+                tone=tone,
+                forbidden_words=forbidden_words
              )
              
              # Apply Cleaning Logic Here (Universal Fix)
-             result.headline_hook = clean_linkedin_text(result.headline_hook)
-             result.main_content = clean_linkedin_text(result.main_content)
-             result.interactive_cta = clean_linkedin_text(result.interactive_cta)
-             
+             result.headline_hook = clean_text_universal(result.headline_hook)
+             result.main_content = clean_text_universal(result.main_content)
+             result.interactive_cta = clean_text_universal(result.interactive_cta)
+             result.tldr = clean_text_universal(result.tldr)
+             # Hook Deduplication Logic
+             try:
+                 hook_text = result.headline_hook.lower().strip()
+                 body_text = result.main_content.strip()
+                 # If body starts with hook (approx match)
+                 if body_text.lower().startswith(hook_text[:20]):
+                      # Remove it
+                      print(f"✂️ LinkedIn Deduplication: Removing valid hook from body start.")
+                      # We can try to replace exactly or just slice
+                      # simple slice might be risky if casing differs. 
+                      # Let's find index.
+                      idx = body_text.lower().find(hook_text)
+                      if idx == 0:
+                          result.main_content = body_text[len(hook_text):].strip()
+             except Exception as e:
+                 print(f"⚠️ Deduplication check failed: {e}")
              return result
         else:
-            # Compiled Model for Twitter
-            return self.draft_twitter(
+            # compiled model
+            result = self.draft_twitter(
                 topic=topic, 
                 outline=str(outline), 
                 hooks_list=str(hooks_list),
                 psychological_trigger=psychological_trigger, 
-                platform=platform
+                platform=platform,
+                audience=audience,
+                tone=tone,
+                forbidden_words=forbidden_words,
+                voice_analysis=voice_analysis
             )
+            
+            # Apply Universal Cleaning to Twitter too (Remove Em Dashes etc)
+            if hasattr(result, 'tweet_thread') and isinstance(result.tweet_thread, list):
+                result.tweet_thread = [clean_text_universal(t) for t in result.tweet_thread]
+            
+            return result
+
+class ClarifierModule(dspy.Module):
+    def __init__(self, aux_lm=None):
+        super().__init__()
+        self.clarify = dspy.ChainOfThought(ClarifyIntent)
+        self.aux_lm = aux_lm
+    
+    def forward(self, raw_dump, existing_profile):
+        if self.aux_lm:
+            with dspy.context(lm=self.aux_lm):
+                return self.clarify(raw_dump=raw_dump, existing_profile=existing_profile)
+        return self.clarify(raw_dump=raw_dump, existing_profile=existing_profile)
+
 
 class PolisherModule(dspy.Module):
     def __init__(self):
@@ -357,13 +549,24 @@ class AgenticThreadCreator(dspy.Module):
     """The main module that orchestrates the sub-modules."""
     def __init__(self):
         super().__init__()
+        # Configure both models
+        self.main_lm, self.aux_lm = configure_llm()
+        
         self.architect_module = ArchitectModule()
         self.hook_module = HookModule()
         self.drafting_module = DraftingModule()
-        self.polisher_module = PolisherModule()
+        # self.polisher_module = PolisherModule() # DEPRECATED
+        self.clarifier_module = ClarifierModule(aux_lm=self.aux_lm)
         self.refine_full_module = dspy.Predict(RefineFullPost)
     
-    def forward(self, raw_topic, research_context, platform="Twitter"):
+    def refine_post_action(self, **kwargs):
+        """Wrapper for refine with Kimi context."""
+        if self.aux_lm:
+             with dspy.context(lm=self.aux_lm):
+                 return self.refine_full_module(**kwargs)
+        return self.refine_full_module(**kwargs)
+    
+    def forward(self, raw_topic, research_context, platform="Twitter", audience="", tone="", forbidden_words="", **kwargs):
         # 1. Architect Step
         architect_out = self.architect_module(raw_topic=raw_topic, research_context=research_context)
         
@@ -382,7 +585,14 @@ class AgenticThreadCreator(dspy.Module):
             outline=architect_out.thread_outline, 
             hooks_list=hooks_str,
             psychological_trigger=architect_out.psychological_trigger,
-            platform=platform
+            platform=platform,
+            audience=audience,
+            tone=tone,
+            forbidden_words=forbidden_words,
+            # We don't have voice_analysis passed in 'forward' usually, let's assume it's passed via kwargs or we update forward sig
+            # For now passing empty if not present, but AgenticThreadCreator.forward needs update if we want to pipe it.
+            # See next replacement chunk for forward update.
+            voice_analysis=kwargs.get('voice_analysis', "") 
         )
         
         # 4. Polish Step & Unification
@@ -406,29 +616,21 @@ class AgenticThreadCreator(dspy.Module):
              
              # 4. Set CTA
              final_cta = cta
-             final_tldr = "N/A"
+             final_tldr = getattr(draft_out, 'tldr', "N/A")
              
         else:
-             # Twitter Path (Compiled)
-             polisher_out = self.polisher_module(
-                draft_content=draft_out.tweet_thread,
-                psychological_trigger=architect_out.psychological_trigger
-             )
+             # Twitter Path (One-Shot Polisher)
+             # Logic is now inside DraftThread constraints
              
-             # PARSING FIX: Ensure we have a list, not a string representation of a list
-             raw_tweets = polisher_out.polished_content
-             if isinstance(raw_tweets, str):
-                 try:
-                     # Safe evaluation to convert "['a','b']" string to list ['a','b']
-                     final_content = ast.literal_eval(raw_tweets)
-                 except:
-                     # Fallback if eval fails: treat as single string split by double newlines
-                     final_content = raw_tweets.split('\n\n')
-             else:
-                 final_content = raw_tweets
-
+             final_content = draft_out.tweet_thread
              selected_hook = draft_out.selected_hook
+             
+             # Extract TLDR/CTA directly from One-Shot
+             final_cta = getattr(draft_out, "cta", "Check comments")
+             final_tldr = getattr(draft_out, "tldr", "Summary unavailable")
 
+             # REMOVED: Separate Polisher Call
+             
              # 5. DEDUPLICATION FIX: Remove the hook if it appears as the first tweet
              if isinstance(final_content, list) and len(final_content) > 0:
                  # Check strict equality or fuzzier inclusion
@@ -440,9 +642,6 @@ class AgenticThreadCreator(dspy.Module):
                  if is_duplicate:
                      print("✂️ Detected Hook repetition in Tweet #1. Removing duplicate.")
                      final_content = final_content[1:] # Slice off the first tweet
-
-             final_cta = polisher_out.cta
-             final_tldr = polisher_out.tldr
 
         return dspy.Prediction(
             refined_topic=architect_out.refined_topic,

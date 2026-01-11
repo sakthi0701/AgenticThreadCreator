@@ -80,6 +80,132 @@
             display: none !important;
         }
 
+        /* Settings Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        /* Modal Content - Replaced by unified style below */
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+        }
+
+        .close-btn {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-btn:hover,
+        .close-btn:focus {
+            color: var(--text-main);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        /* Improved Inputs & Selects */
+        .form-input,
+        .custom-select {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .form-input:focus,
+        .custom-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            background: var(--card-bg);
+        }
+
+        /* Custom Dropdown Arrow */
+        .custom-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            padding-right: 40px;
+            cursor: pointer;
+        }
+
+        /* Modal Animation */
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-content {
+            background: var(--card-bg);
+            margin: 10% auto;
+            padding: 24px;
+            border: 1px solid var(--border);
+            width: 90%;
+            max-width: 500px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Clarification Polish */
+        .clarification-box {
+            background: rgba(249, 115, 22, 0.1);
+            border: 1px solid rgba(249, 115, 22, 0.3);
+            border-left: 4px solid #f97316;
+            padding: 15px;
+            border-radius: 8px;
+            color: var(--text-main);
+            backdrop-filter: blur(10px);
+        }
+
         /* Header */
         .header {
             text-align: center;
@@ -114,6 +240,69 @@
 
         .theme-toggle:hover {
             background: var(--border);
+        }
+
+        /* Chat Interface Polish */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+
+        .chat-msg {
+            padding: 10px 15px;
+            border-radius: 12px;
+            max-width: 80%;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .chat-msg.bot {
+            align-self: flex-start;
+            background: rgba(255, 255, 255, 0.1);
+            border-bottom-left-radius: 2px;
+            color: var(--text-main);
+        }
+
+        .chat-msg.user {
+            align-self: flex-end;
+            background: var(--primary);
+            color: white;
+            border-bottom-right-radius: 2px;
+        }
+
+        .chat-msg.system {
+            align-self: center;
+            background: transparent;
+            color: var(--text-muted);
+            font-style: italic;
+            border: 1px solid var(--border);
+        }
+
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* Cards */
@@ -236,15 +425,15 @@
             border: none;
             color: var(--text-muted);
             cursor: pointer;
-            padding: 6px;
+            padding: 4px;
             /* Bigger touch target */
             transition: color 0.2s;
             border-radius: 4px;
+            font-size: 25px;
         }
 
         .btn-icon:hover {
             color: var(--primary);
-            background: var(--bg);
         }
 
         /* Output Boxes */
@@ -362,11 +551,59 @@
         li {
             color: var(--text-main);
         }
+
+        /* TOAST NOTIFICATION */
+        .toast-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            min-width: 250px;
+            padding: 16px 20px;
+            background: var(--card-bg);
+            color: var(--text-main);
+            border-left: 5px solid var(--primary);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: height;
+            gap: 12px;
+            transform: translateX(120%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid var(--border);
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.error {
+            border-left-color: #ef4444;
+        }
+
+        .toast.success {
+            border-left-color: var(--success);
+        }
+
+        .toast-icon {
+            font-size: 1.2rem;
+        }
     </style>
 </head>
 
 <body data-theme="light">
     <div class="container">
+
+        <!-- TOAST CONTAINER -->
+        <div id="toastContainer" class="toast-container"></div>
 
         <div class="header">
             <h1>Agentic Thread Creator</h1>
@@ -374,14 +611,34 @@
             <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">🌙</button>
         </div>
 
-        <!-- INPUT SECTION -->
-        <div class="card">
+        <!-- INPUT SECTION (Setup) -->
+        <div class="card" id="setupSection">
             <div class="flex justify-between items-center mb-4">
                 <h3 style="margin:0;">📝 Draft Your Ideas</h3>
+                <div style="display: flex; gap: 8px;">
+                    <select id="profileSelect" onchange="handleProfileChange(this)" class="custom-select">
+                        <option value="" disabled selected>Loading profiles...</option>
+                        <!-- Dynamic options populated by JS -->
+                    </select>
+                    <button class="btn-secondary" style="font-size: 20px;" onclick="openProfileEditor()"
+                        title="Edit Profile">⚙️</button>
+                </div>
             </div>
 
             <textarea id="topicInput" rows="1" placeholder="Dump your ideas here..."
                 oninput="autoResize(this)"></textarea>
+
+            <div class="flex justify-between items-center mb-4">
+                <label style="font-weight: 500; color: var(--text-muted); font-size: 0.9rem;">Template:</label>
+                <select id="templateSelect" class="custom-select" style="width: auto;">
+                    <option value="Choose a template suitable for this post" selected>✨ Let Agent Choose</option>
+                    <option value="Educational">Educational</option>
+                    <option value="Contrarian">Contrarian</option>
+                    <option value="Storytelling">Storytelling</option>
+                    <option value="Promotional">Promotional</option>
+                    <option value="Listicle">Listicle</option>
+                </select>
+            </div>
 
             <div class="platform-toggle">
                 <label class="platform-option selected" id="opt-twitter">
@@ -394,24 +651,36 @@
                 </label>
             </div>
 
-            <button class="btn" onclick="startGeneration()">
-                <span>Generate Content</span>
-                <span class="btn-icon">✨</span>
+            <!-- CHAT / CLARIFICATION AREA -->
+            <div id="clarificationSection" class="hidden" style="margin-top: 20px;">
+                <h3 style="margin-bottom: 10px; color: var(--primary);">🤔 Refining Plan...</h3>
+                <div id="clarificationContainer" class="chat-container">
+                    <!-- Chat bubbles go here -->
+                </div>
+            </div>
+
+
+
+            <button class="btn" id="generateBtn" onclick="startGeneration()" style="margin-top: 20px;">
+                <span id="genBtnText">Forge Content</span>
+                <span id="genBtnIcon" class="btn-icon">🪶</span>
             </button>
         </div>
 
-        <!-- PROGESS SECTION (LIVE BRAIN) -->
-        <div id="liveBrain" class="live-brain">
-            <h4 style="margin-bottom: 20px;">🧠 Agent Workflow</h4>
-            <div class="brain-step" id="step-1"><span class="step-icon">○</span> Refiner Agent: Structuring Ideas...
-            </div>
-            <div class="brain-step" id="step-2"><span class="step-icon">○</span> Research Agent: Gathering insights...
-            </div>
-            <div class="brain-step" id="step-3"><span class="step-icon">○</span> Hook Smith: Crafting viral hooks...
-            </div>
-            <div class="brain-step" id="step-4"><span class="step-icon">○</span> Drafter Agent: Building content
-                drafts...</div>
-            <div class="brain-step" id="step-5"><span class="step-icon">○</span> Editor Agent: Polishing & humanizing...
+        <!-- PROGRESS SECTION (Working) -->
+        <div id="workingSection" class="hidden">
+            <div id="liveBrain" class="live-brain" style="display:block;">
+                <h4 style="margin-bottom: 20px;">🧠 Agent Workflow</h4>
+                <div class="brain-step" id="step-1"><span class="step-icon">○</span> Refiner Agent: Structuring Ideas...
+                </div>
+                <div class="brain-step" id="step-2"><span class="step-icon">○</span> Research Agent: Gathering
+                    insights...</div>
+                <div class="brain-step" id="step-3"><span class="step-icon">○</span> Hook Smith: Crafting viral hooks...
+                </div>
+                <div class="brain-step" id="step-4"><span class="step-icon">○</span> Drafter Agent: Building content
+                    drafts...</div>
+                <div class="brain-step" id="step-5"><span class="step-icon">○</span> Editor Agent: Polishing &
+                    humanizing...</div>
             </div>
         </div>
 
@@ -423,7 +692,9 @@
                 <div style="font-size: 1rem; color: var(--text-muted);">
                     <strong>Template:</strong> <span id="templateOutput">Educational</span>
                 </div>
-                <button class="btn btn-secondary" onclick="copyAll()">📋 Copy Full Post</button>
+                <button class="btn-secondary" onclick="copyAll()">📋 Copy Full Thread</button>
+                <button class="btn" style="width:50% !important; background: #5b4cfc; color:white; border:none;"
+                    onclick="learnStyle()">🧠 Learn My Style 🧬</button>
             </div>
 
             <!-- HOOK -->
@@ -436,7 +707,7 @@
             </div>
 
             <!-- BODY -->
-            <h4 id="bodyTitle" class="mb-4">📱 Thread Body</h4>
+            <h4 id="bodyTitle" class="mb-4"> Thread Body</h4>
             <div id="tweetsOutput"></div>
 
             <!-- ANCILLARY -->
@@ -473,11 +744,47 @@
                         placeholder="e.g. 'Make it punchier', 'Add emojis', 'Focus more on value'..."
                         style="margin-bottom:0;">
                     <button class="btn" style="width: auto;" onclick="refineFullPost()">Refine</button>
+                    <button id="undoBtn" class="btn-secondary hidden" style="width: auto;" onclick="undoRefinement()"
+                        title="Undo">↩️</button>
                 </div>
             </div>
 
         </div>
 
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Edit Profile</h2>
+                <span class="close-btn" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Profile Name</label>
+                    <input type="text" id="p_name" class="form-input" disabled>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Target Audience</label>
+                    <input type="text" id="p_audience" class="form-input" placeholder="e.g. VCs and Founders">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tone of Voice</label>
+                    <input type="text" id="p_tone" class="form-input" placeholder="e.g. Contrarian, punchy">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Forbidden Words (comma separated)</label>
+                    <input type="text" id="p_badwords" class="form-input" placeholder="delve, foster, ...">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Voice Analysis (AI Generated)</label>
+                    <textarea id="p_style_analysis" class="form-input" rows="3"
+                        placeholder="Click 'Learn My Style' to populate this..."></textarea>
+                </div>
+                <button class="btn" onclick="saveProfile()" style="margin-top: 10px;">Save Profile</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -496,6 +803,7 @@
             : "https://agenticthreadcreator-670481574212.asia-south1.run.app";
 
         // State for persistence
+        let progressInterval = null; // Timer for fake progress
         let state = {
             currentHook: "",
             currentTweets: [],
@@ -506,7 +814,8 @@
             oldTweets: [],
             oldCta: "",
 
-            hasRefined: false // To track if we have a diff history
+            hasRefined: false, // To track if we have a diff history
+            profiles: {} // To store loaded profiles
         };
 
         // Auto-Resize Textarea
@@ -549,69 +858,355 @@
             for (let i = 1; i <= 5; i++) updateBrainStep(i, '');
         }
 
-        async function startGeneration() {
-            const topic = document.getElementById('topicInput').value;
-            const platform = document.querySelector('input[name="platform"]:checked').value;
-
-            if (!topic) return alert("Please enter a topic!");
-
-            // Reset UI
-            document.getElementById('liveBrain').style.display = 'block';
-            document.getElementById('outputSection').classList.add('hidden');
-            resetBrain(); // Reset colors to grey
-
-            state.hasRefined = false; // Reset diff history
-
-            // Simple progress simulation
-            let step = 1;
-            updateBrainStep(1, 'active');
-
-            const apiPromise = fetch(`${API_URL}/generate-thread`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ topic, platform })
-            });
-
-            const progressInterval = setInterval(() => {
-                if (step < 5) {
-                    updateBrainStep(step, 'done');
-                    step++;
-                    updateBrainStep(step, 'active');
+        async function loadProfiles() {
+            try {
+                let stored = localStorage.getItem("user_profiles");
+                if (!stored) {
+                    // Default Data for New Users
+                    const defaultData = {
+                        "default_profile": "tech_founder",
+                        "profiles": {
+                            "tech_founder": {
+                                "audience": "VCs, Engineers, and Founders",
+                                "tone": "Contrarian, Punchy, Direct",
+                                "forbidden_words": ["delve", "foster", "landscape", "crucial"]
+                            }
+                        }
+                    };
+                    stored = JSON.stringify(defaultData);
+                    localStorage.setItem("user_profiles", stored);
                 }
-            }, 7000);
+
+                const data = JSON.parse(stored);
+
+                const sel = document.getElementById('profileSelect');
+                sel.innerHTML = "";
+
+                // Add default first
+                const def = data.default_profile;
+                for (const [key, val] of Object.entries(data.profiles)) {
+                    const opt = document.createElement('option');
+                    opt.value = key;
+                    opt.innerText = key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    if (key === def) opt.selected = true;
+                    sel.appendChild(opt);
+                }
+                // Add 'New' option
+                const newOpt = document.createElement('option');
+                newOpt.value = "new_profile";
+                newOpt.innerText = "+ Add New Profile";
+                sel.appendChild(newOpt);
+
+                state.profiles = data.profiles; // Store locally
+            } catch (e) {
+                console.error("Failed to load profiles", e);
+                const sel = document.getElementById('profileSelect');
+                sel.innerHTML = `<option disabled selected>Error loading profiles (${e.message})</option>`;
+            }
+        }
+
+        // Load on start
+        loadProfiles();
+
+        function handleProfileChange(el) {
+            if (el.value === "new_profile") {
+                // Open editor for new
+                openProfileEditor(true);
+            }
+        }
+
+        function openProfileEditor(isNew = false) {
+            const modal = document.getElementById('settingsModal');
+            const nameInput = document.getElementById('p_name');
+            const sel = document.getElementById('profileSelect');
+            let currentName = sel.value;
+
+            if (isNew) {
+                const newName = prompt("Enter a unique name for the new profile:");
+                if (!newName) return;
+                // create a temp empty profile in state if needed or just let them fill it
+                currentName = newName.toLowerCase().replace(/\s+/g, '_');
+                // Create valid entry in state if not exists
+                if (!state.profiles[currentName]) {
+                    state.profiles[currentName] = { audience: "", tone: "", forbidden_words: [] };
+                }
+            } else {
+                if (currentName === 'new_profile') return; // Should have been handled
+            }
+
+            // Populate Modal
+            const pData = state.profiles[currentName] || {};
+            nameInput.value = currentName;
+            document.getElementById('p_audience').value = pData.audience || "";
+            document.getElementById('p_tone').value = pData.tone || "";
+            document.getElementById('p_tone').value = pData.tone || "";
+            document.getElementById('p_badwords').value = (pData.forbidden_words || []).join(", ");
+            document.getElementById('p_style_analysis').value = pData.style_analysis || "";
+
+            document.getElementById('modalTitle').innerText = isNew ? "Create New Profile" : "Edit Profile: " + currentName;
+
+            modal.style.display = "block";
+        }
+
+        function closeModal() {
+            document.getElementById('settingsModal').style.display = "none";
+        }
+
+        async function saveProfile() {
+            const nameInput = document.getElementById('p_name');
+            const name = nameInput.value;
+            if (!name) return showToast("Profile name is required", "error");
+
+            const profileData = {
+                audience: document.getElementById('p_audience').value,
+                tone: document.getElementById('p_tone').value,
+                tone: document.getElementById('p_tone').value,
+                forbidden_words: document.getElementById('p_badwords').value.split(',').map(s => s.trim()).filter(s => s),
+                style_analysis: document.getElementById('p_style_analysis').value
+            };
 
             try {
-                const response = await apiPromise;
-                clearInterval(progressInterval);
-                const data = await response.json();
+                // Optimistic Update
+                state.profiles[name] = profileData;
 
-                for (let i = 1; i <= 5; i++) updateBrainStep(i, 'done');
+                // Save to LocalStorage
+                const storageData = {
+                    default_profile: document.getElementById('profileSelect').value || name,
+                    profiles: state.profiles
+                };
+                localStorage.setItem("user_profiles", JSON.stringify(storageData));
 
-                if (data.error) throw new Error(data.error);
-
-                // Initialize State
-                state.currentHook = data.hook;
-                state.currentTweets = data.tweets;
-                state.currentCta = data.cta;
-                state.currentTldr = data.tldr;
-
-                // Set 'Old' state to same initially so diff is clean if toggled immediately
-                state.oldHook = data.hook;
-                state.oldTweets = data.tweets;
-                state.oldCta = data.cta;
-
-                renderAll();
-                document.getElementById('templateOutput').innerText = data.template;
-
+                showToast("Profile Saved Locally!", "success");
+                closeModal();
+                loadProfiles(); // Refresh dropdown
+                // Set selection to saved
                 setTimeout(() => {
-                    document.getElementById('liveBrain').style.display = 'none';
-                    document.getElementById('outputSection').classList.remove('hidden');
-                }, 800);
+                    document.getElementById('profileSelect').value = name;
+                }, 500);
 
             } catch (e) {
-                clearInterval(progressInterval);
-                alert("Error: " + e.message);
+                showToast("Failed to save profile: " + e.message, "error");
             }
+        }
+
+        // Close modal on click outside
+        window.onclick = function (event) {
+            const modal = document.getElementById('settingsModal');
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        async function startGeneration() {
+            const topicInput = document.getElementById('topicInput');
+            const topic = topicInput.value;
+            const platform = document.querySelector('input[name="platform"]:checked').value;
+            const profile = document.getElementById('profileSelect').value;
+
+            if (!topic) return showToast("Please enter a topic!", "error");
+
+            // UI Updates
+            const btn = document.getElementById('generateBtn');
+            const brain = document.getElementById('liveBrain');
+
+            // Auto Scroll
+            brain.style.display = 'block';
+            brain.scrollIntoView({ behavior: 'smooth' });
+
+            document.getElementById('outputSection').classList.add('hidden');
+
+            // Render Chat Container if not exists
+            const container = document.getElementById('clarificationContainer');
+            container.innerHTML = ""; // Clear previous chat
+            state.clarificationHistory = []; // Reset history
+
+            await runGenerationLoop(topic);
+        }
+
+        async function runGenerationLoop(topic) {
+            updateBrainStep(1, 'active');
+
+            // Simulate progress for UX (since backend is monolithic)
+            simulateProgress();
+
+            try {
+                const pKey = document.getElementById('profileSelect').value;
+                const pData = state.profiles[pKey] || {};
+
+                const payload = {
+                    topic: topic,
+                    template: document.getElementById('templateSelect').value,
+                    platform: document.querySelector('input[name="platform"]:checked').value,
+                    profile_name: pKey,
+                    clarification_history: state.clarificationHistory,
+                    audience: pData.audience || "",
+                    tone: pData.tone || "",
+                    forbidden_words: pData.forbidden_words || []
+                };
+
+                const res = await fetch(`${API_URL}/generate-thread`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+
+                if (data.status === "CLARIFICATION_NEEDED") {
+                    // Render Question
+                    const clarSection = document.getElementById('clarificationSection');
+                    if (clarSection) clarSection.classList.remove('hidden');
+
+                    renderClarificationQuestion(data.question, data.type, data.options, topic);
+                }
+                else if (data.status === "COMPLETED") {
+                    updateBrainStep(1, 'done');
+                    // ... (rest of completion logic) ...
+                    handleCompletion(data);
+                }
+                else if (data.error) {
+                    throw new Error(data.error);
+                }
+
+            } catch (e) {
+                showToast("Error: " + e.message, "error");
+                document.getElementById('setupSection').classList.remove('hidden');
+                document.getElementById('workingSection').classList.add('hidden');
+            }
+        }
+
+        function renderClarificationQuestion(question, type, options, topic) {
+            const container = document.getElementById('clarificationContainer');
+
+            // Chat Bubble (Bot)
+            const botMsg = document.createElement('div');
+            botMsg.className = 'chat-msg bot';
+            botMsg.innerText = question;
+            container.appendChild(botMsg);
+
+            // Input Area
+            const inputDiv = document.createElement('div');
+            inputDiv.className = 'chat-input-area';
+
+            if (type === 'mcq' && options && options.length > 0) {
+                // Render Buttons
+                options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-secondary btn-sm';
+                    btn.innerText = opt;
+                    btn.onclick = () => submitAnswer(question, opt, topic);
+                    inputDiv.appendChild(btn);
+                    // Add slight margin
+                    btn.style.marginRight = "5px";
+                    btn.style.marginBottom = "5px";
+                });
+            } else {
+                // Render Text Input
+                const txt = document.createElement('input');
+                txt.type = 'text';
+                txt.className = 'form-input';
+                txt.placeholder = 'Type your answer...';
+                txt.onkeypress = (e) => {
+                    if (e.key === 'Enter') submitAnswer(question, txt.value, topic);
+                };
+                inputDiv.appendChild(txt);
+
+                const sendBtn = document.createElement('button');
+                sendBtn.className = 'btn btn-sm';
+                sendBtn.innerText = 'Send';
+                sendBtn.onclick = () => submitAnswer(question, txt.value, topic);
+                inputDiv.appendChild(sendBtn);
+            }
+
+            container.appendChild(inputDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function submitAnswer(question, answer, topic) {
+            if (!answer.trim()) return;
+
+            const container = document.getElementById('clarificationContainer');
+
+            // Remove Input Area
+            const inputArea = container.querySelector('.chat-input-area');
+            if (inputArea) inputArea.remove();
+
+            // User Bubble
+            const userMsg = document.createElement('div');
+            userMsg.className = 'chat-msg user';
+            userMsg.innerText = answer;
+            container.appendChild(userMsg);
+
+            // Update History
+            state.clarificationHistory.push({ role: 'assistant', content: question });
+            state.clarificationHistory.push({ role: 'user', content: answer });
+
+            // Show Thinking...
+            const thinkMsg = document.createElement('div');
+            thinkMsg.className = 'chat-msg system';
+            thinkMsg.innerText = 'Thinking...';
+            thinkMsg.id = 'tempThinking';
+            container.appendChild(thinkMsg);
+            container.scrollTop = container.scrollHeight;
+
+            // Switch to Working Section to show progress
+            document.getElementById('clarificationSection').classList.add('hidden');
+            document.getElementById('workingSection').classList.remove('hidden');
+
+            // Loop
+            await runGenerationLoop(topic);
+
+            // Note: runGenerationLoop will either re-show clarification if needed
+            // OR finish. So we don't need to manually remove 'Thinking' bubble
+            // because the whole container is hidden now.
+        }
+
+        function handleCompletion(data) {
+            state.currentHook = data.hook;
+            state.currentTweets = data.tweets; // List of strings
+            state.currentCta = data.cta;
+            state.currentTldr = data.tldr;
+            state.currentInteractionId = data.interaction_id; // [NEW] Store Correlation ID
+
+            // Update old for diff
+            state.oldHook = data.hook;
+            state.oldTweets = [...data.tweets];
+            state.oldCta = data.cta;
+            state.hasRefined = false;
+
+            // UI
+            const working = document.getElementById('workingSection');
+            if (working) working.classList.add('hidden');
+
+            const output = document.getElementById('outputSection');
+            if (output) output.classList.remove('hidden');
+
+            // Populate inputs
+            renderAll();
+
+            // Reset workflow steps for next time
+            clearInterval(progressInterval);
+            resetBrain();
+        }
+
+        function simulateProgress() {
+            if (progressInterval) clearInterval(progressInterval);
+            let step = 2;
+            // 2=Research, 3=Draft, 4=Polish, 5=Done
+
+            progressInterval = setInterval(() => {
+                if (step > 4) {
+                    clearInterval(progressInterval);
+                    return;
+                }
+
+                // Mark prev done
+                updateBrainStep(step - 1, 'done');
+                // Mark current active
+                updateBrainStep(step, 'active');
+
+                step++;
+            }, 5000); // Move every 5 seconds (assuming ~20s total gen time)
         }
 
         function renderAll() {
@@ -695,7 +1290,25 @@
             }
         }
 
-        // --- 4. REFINE & DIFF LOGIC ---
+        // --- 5. REFINE & DIFF LOGIC ---
+        function undoRefinement() {
+            if (!state.hasRefined) return;
+
+            // Revert state
+            state.currentHook = state.oldHook;
+            state.currentTweets = [...state.oldTweets];
+            state.currentCta = state.oldCta;
+
+            state.hasRefined = false; // No diff effectively
+
+            // Hide undo
+            document.getElementById('undoBtn').classList.add('hidden');
+
+            // Re-render plain
+            document.getElementById('diffToggle').checked = false;
+            renderAll();
+        }
+
         async function refineFullPost() {
             const prompt = document.getElementById('refinePrompt').value;
             if (!prompt) return;
@@ -735,6 +1348,7 @@
                 document.getElementById('diffToggle').checked = true;
 
                 renderAll();
+                document.getElementById('undoBtn').classList.remove('hidden');
 
             } catch (e) {
                 alert(e.message);
@@ -779,7 +1393,114 @@
             const tweets = state.currentTweets.join('\n\n');
             const full = `${hook}\n\n${tweets}\n\n${cta}`;
             navigator.clipboard.writeText(full);
-            alert("Copied to clipboard!");
+            navigator.clipboard.writeText(full);
+            showToast("Copied to clipboard!", "success");
+
+            // [NEW] Log as Manual Save
+            logManualEdit("MANUAL_SAVE");
+        }
+
+
+        // [NEW] Manual Logging for Gold Standard Data
+        async function logManualEdit(actionType) {
+            if (!state.currentInteractionId) return; // Nothing to link to
+
+            const content = {
+                hook: state.currentHook,
+                tweets: state.currentTweets,
+                cta: state.currentCta
+            };
+
+            const meta = {
+                "source": "manual_action",
+                "client_timestamp": new Date().toISOString()
+            };
+
+            try {
+                // Fire and forget (don't await)
+                fetch(`${API_URL}/log-interaction`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        interaction_id: null, // Let backend gen new one for this event
+                        parent_id: state.currentInteractionId, // Link to original
+                        action_type: actionType,
+                        content: content,
+                        meta: meta
+                    })
+                });
+                console.log("Logged manual interaction:", actionType);
+            } catch (e) {
+                console.warn("Failed to log interaction", e);
+            }
+        }
+
+        // --- 6. TOAST LOGIC ---
+        function showToast(message, type = "info") {
+            const container = document.getElementById('toastContainer');
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+
+            let icon = "ℹ️";
+            if (type === 'error') icon = "⛔";
+            if (type === 'success') icon = "✅";
+
+            toast.innerHTML = `
+                <span class="toast-icon">${icon}</span>
+                <span>${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            // Trigger Animation
+            setTimeout(() => toast.classList.add('show'), 10);
+
+            // Auto Remove
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        async function learnStyle() {
+            const pKey = document.getElementById('profileSelect').value;
+            if (!pKey) return showToast("No profile selected!", "error");
+
+            const fullText = `${state.currentHook}\n\n${state.currentTweets.join('\n\n')}\n\n${state.currentCta}`;
+            const currentTone = state.profiles[pKey]?.tone || "";
+
+            const btn = document.querySelector('button[onclick="learnStyle()"]');
+            const oldText = btn.innerText;
+            btn.innerText = "Analyzing...";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${API_URL}/analyze-style`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content: fullText, current_style: currentTone })
+                });
+                const data = await res.json();
+
+                // Update State
+                if (data.style_summary) {
+                    state.profiles[pKey].style_analysis = data.style_summary; // Correct field
+
+                    // Save to LocalStorage
+                    const storageData = { default_profile: pKey, profiles: state.profiles };
+                    localStorage.setItem("user_profiles", JSON.stringify(storageData));
+
+                    showToast("Style Analyzed! Opening editor...", "success");
+                    openProfileEditor(); // Open modal to show the user
+                }
+
+            } catch (e) {
+                showToast("Style Learning Failed: " + e.message, "error");
+            } finally {
+                btn.innerText = oldText;
+                btn.disabled = false;
+            }
         }
     </script>
 </body>

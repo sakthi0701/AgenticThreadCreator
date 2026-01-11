@@ -7,6 +7,7 @@ import dspy
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from utils.model_loader import ModelLoader
 from utils.parsing import safe_parse_list
+from utils.text_cleaning import clean_linkedin_text
 
 class PolisherAgent(Agent):
     """
@@ -50,11 +51,17 @@ class PolisherAgent(Agent):
             }
 
     def refine_full_post(self, hook, tweets, cta, prompt, platform="Twitter"):
-        """Refines the entire post based on user instruction."""
+        """
+        Refines the entire post based on user instruction.
+        
+        Raises:
+            RuntimeError: If refinement fails
+        """
         print(f"✨ PolisherAgent is refining the FULL post (Platform: {platform})...")
         try:
              # Call the module
-             result = self.agentic_model.refine_full_module(
+             # Call the wrapper method that handles Kimi context
+             result = self.agentic_model.refine_post_action(
                  current_hook=hook,
                  current_body=str(tweets),
                  current_cta=cta,
@@ -69,22 +76,6 @@ class PolisherAgent(Agent):
 
              # --- SAFETY FILTER FOR LINKEDIN ---
              if platform == "LinkedIn":
-                 import re
-                 def clean_linkedin_text(text):
-                     if not isinstance(text, str): return text
-                     # 1. Normalize bullets: "* item" -> "• item" (Aesthetic fix)
-                     text = re.sub(r'^\s*\*\s+', '• ', text, flags=re.MULTILINE)
-                     
-                     # 2. Remove Markdown artifacts
-                     text = text.replace('**', '') # Remove bolding
-                     text = text.replace('##', '') # Remove headers
-                     
-                     # 3. Cleanup remaining * (likely italics) but keep text
-                     # e.g. *italic* -> italic
-                     text = text.replace('*', '')
-                     
-                     return text.strip()
-
                  result.refined_hook = clean_linkedin_text(result.refined_hook)
                  result.refined_cta = clean_linkedin_text(result.refined_cta)
                  
@@ -100,4 +91,4 @@ class PolisherAgent(Agent):
              }
         except Exception as e:
              print(f"⚠️ PolisherAgent Full Refine failed: {e}")
-             return {"error": str(e)}
+             raise RuntimeError(f"Refinement failed: {e}") from e

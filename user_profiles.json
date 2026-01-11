@@ -1,0 +1,35 @@
+{
+    "default_profile": "medical_professional",
+    "profiles": {
+        "tech_founder": {
+            "audience": "VCs, Engineers, and Founders",
+            "tone": "Contrarian, Punchy, Direct",
+            "forbidden_words": [
+                "delve",
+                "foster",
+                "landscape",
+                "crucial"
+            ],
+            "avg_sentence_length": "Short (<15 words)"
+        },
+        "medical_professional": {
+            "audience": "Doctors, Hospital Admins, and Radiologists",
+            "tone": "Empathetic, Narrative, Authoritative",
+            "forbidden_words": [
+                "scale",
+                "disrupt",
+                "10x",
+                "game-changer"
+            ],
+            "avg_sentence_length": "Medium (Narrative style)"
+        },
+        "test_user": {
+            "audience": "Test Audience",
+            "tone": "Test Tone",
+            "forbidden_words": [
+                "bad"
+            ],
+            "avg_sentence_length": "Short"
+        }
+    }
+}

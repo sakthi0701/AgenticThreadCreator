@@ -60,8 +60,13 @@ def load_training_data(limit=30, cache_file="enriched_data_cache.json"):
             for item in raw_data:
                 # We have to rebuild the Example object
                 ex = dspy.Example(**item)
-                # Re-apply the input keys (DSPy forgets these in JSON)
-                ex = ex.with_inputs('raw_topic', 'research_context', 'platform')
+                ex = dspy.Example(**item)
+                
+                # POLYFILL MISSING FIELDS (for backward compatibility)
+                if not getattr(ex, 'audience', None): ex = ex.with_inputs('audience', dict(audience="General Audience").get('audience')) # dspy hack: safer to just recreate if strict
+                
+                # Re-apply inputs matching the NEW Creation Logic
+                ex = ex.with_inputs('raw_topic', 'research_context', 'platform', 'audience', 'tone', 'forbidden_words')
                 examples.append(ex)
                 
             print(f"✅ Loaded {len(examples)} examples from cache.")
@@ -70,12 +75,15 @@ def load_training_data(limit=30, cache_file="enriched_data_cache.json"):
             print(f"⚠️ Cache file corrupted ({e}). Regenerating data...")
 
     # 2. IF NO CACHE, RUN THE EXPENSIVE LOGIC
-    # Hardcoded credentials from original notebook (or use env vars if available)
-    url = "https://ndqenyhahiqqshwvherc.supabase.co"
+    # Load credentials from environment variables
+    url = os.getenv("SUPABASE_URL")
     key = os.getenv("SUPABASE_KEY")
-    if not key:
-        print("❌ Error: SUPABASE_KEY not found in environment variables.")
-        exit(1)
+    
+    if not url or not key:
+        raise ValueError(
+            "Missing Supabase credentials. Set SUPABASE_URL and SUPABASE_KEY "
+            "environment variables."
+        )
     
     supabase: Client = create_client(url, key)
 
@@ -92,7 +100,8 @@ def load_training_data(limit=30, cache_file="enriched_data_cache.json"):
         threads_data = random.sample(threads_data, limit)
     
     # Configure a cheap/fast model for data enrichment (e.g., Gemini Flash)
-    enricher = dspy.Predict(DataEnricher)
+    # Configure a cheap/fast model for data enrichment (e.g., Gemini Flash)
+    enricher = dspy.ChainOfThought(DataEnricher) # UPGRADE: Use CoT for better reasoning
 
     examples = []
     cacheable_data = [] # List to store raw dicts for JSON saving
@@ -105,6 +114,23 @@ def load_training_data(limit=30, cache_file="enriched_data_cache.json"):
         tweets = [t['tweet_text'] for t in tweets_resp.data]
         
         if not tweets: continue
+        
+        # --- DATA HYGIENE (SCHIZOPHRENIA PREVENTION) ---
+        # 1. Length Check
+        if any(len(t) > 280 for t in tweets):
+            print(f"    🗑️ Skipping thread {thread_id}: Contains tweet > 280 chars.")
+            continue
+            
+        # 2. Preamble Check
+        first_tweet_lower = tweets[0].lower()
+        if "here is the thread" in first_tweet_lower or "sure, here" in first_tweet_lower:
+            print(f"    🗑️ Skipping thread {thread_id}: Contains AI Preamble.")
+            continue
+            
+        # 3. Structure Check
+        if len(tweets) < 2:
+            print(f"    🗑️ Skipping thread {thread_id}: Too short (<2 tweets).")
+            continue
 
         full_thread_text = " ".join(tweets[:3]) # First 3 tweets are enough for context
 
@@ -137,6 +163,7 @@ def load_training_data(limit=30, cache_file="enriched_data_cache.json"):
             
             # Use Reverse-Engineered Outline
             real_outline = enriched.reverse_engineered_outline
+            real_tone = enriched.detected_tone
             
         except Exception as e:
             print(f"    Skipping thread due to enrichment error: {e}")
@@ -173,8 +200,13 @@ def load_training_data(limit=30, cache_file="enriched_data_cache.json"):
             polished_content=tweets, 
             tldr="Summary of thread", 
             cta=thread['cta_text'],
-            platform="Twitter" # Explicitly include platform for compiled path
-        ).with_inputs('raw_topic', 'research_context', 'platform')
+            platform="Twitter",
+            
+            # MISSING FIELDS ADDED
+            audience="General Audience",
+            tone=real_tone,
+            forbidden_words=[]
+        ).with_inputs('raw_topic', 'research_context', 'platform', 'audience', 'tone', 'forbidden_words')
         
         examples.append(example)
         
@@ -198,20 +230,46 @@ def load_training_data(limit=30, cache_file="enriched_data_cache.json"):
 # 2. METRIC
 # ==============================================================================
 def basic_metric(example, pred, trace=None):
-    # Check if we generated the key fields
-    # Note: dspy.Prediction fields match what we returned in forward()
-    if not pred.hooks_list: return False
-    if not pred.thread_outline: return False
+    # 1. Structural Check
+    if not pred.hooks_list or not isinstance(pred.hooks_list, list): return False
     if not pred.tweet_thread: return False
-    if not pred.polished_content: return False
     
-    # New Psychological Fields
-    # Use getattr to be safe if the model schema changes
+    # 2. Strict Constraint Check (The "Antigravity" Rules)
+    tweets = pred.tweet_thread
+    
+    # A) List Format
+    if isinstance(tweets, str): return False # Failed to produce a list
+    if not isinstance(tweets, list): return False
+    
+    # B) Character Limit (CRITICAL)
+    for t in tweets:
+        if len(str(t)) > 280: 
+            return False # Penalize heavily for hallucinating long tweets
+            
+    # C) Preamble Check
+    first_tweet = str(tweets[0]).lower()
+    if "here is the thread" in first_tweet or "sure," in first_tweet:
+        return False
+        
+    # NEW: D) "Gamability" Check (Too Short / Low Effort)
+    total_chars = sum(len(str(t)) for t in tweets)
+    if total_chars < 150: # A whole thread < 150 chars is suspicious
+        return False 
+        
+    # NEW: E) Semantic Overlap (Keyword Check)
+    # Ensure generated text actually relates to the topic
+    topic_words = set(example.raw_topic.lower().split())
+    thread_words = set(str(tweets).lower().split())
+    if not topic_words.intersection(thread_words):
+         # If ZERO words from topic appear in thread, it's likely a hallucination
+         return False
+
+        
+    # 3. Content Check
     if not getattr(pred, 'psychological_trigger', None): return False
     
-    # Check structure
-    if isinstance(pred.hooks_list, list) and len(pred.hooks_list) < 2:
-        return False # Penalize single-item lists if we want 5
+    # 4. Diversity Check for Hooks
+    if len(pred.hooks_list) < 2: return False
         
     return True
 
@@ -228,8 +286,9 @@ if __name__ == "__main__":
         
     print("Starting Compilation for 5-Step Architecture...")
     
-    # Load Data
-    train_data = load_training_data(limit=30) # Start small
+    # Load Data (use centralized config)
+    from config import settings
+    train_data = load_training_data(limit=settings.training_data_limit)
     if len(train_data) < 5:
         print("Not enough data to compile. Aborting.")
         exit(1)
@@ -237,9 +296,12 @@ if __name__ == "__main__":
     # Instantiate
     teacher = AgenticThreadCreator()
     
-    # Compiler
-    # Use fewer labeled demos to prevent over-reliance on the placeholder triggers
-    teleprompter = BootstrapFewShot(metric=basic_metric, max_labeled_demos=2, max_bootstrapped_demos=20)
+    # Compiler (use centralized config)
+    teleprompter = BootstrapFewShot(
+        metric=basic_metric, 
+        max_labeled_demos=settings.max_labeled_demos,
+        max_bootstrapped_demos=settings.max_bootstrapped_demos
+    )
     
     print("Compiling... (This will take a minute)")
     compiled_model = teleprompter.compile(teacher, trainset=train_data)

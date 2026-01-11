@@ -27,7 +27,7 @@ class DrafterAgent(Agent):
         self.agentic_model = ModelLoader.get_model()
 
 
-    def act(self, topic: str, outline: list, hooks_list: list, psychological_trigger: str, platform: str = "Twitter"):
+    def act(self, topic: str, outline: list, hooks_list: list, psychological_trigger: str, platform: str = "Twitter", voice_analysis: str = ""):
         """The main action the agent performs."""
         print(f"🎨 DrafterAgent is now drafting a thread from outline (Platform: {platform})...")
         
@@ -37,7 +37,8 @@ class DrafterAgent(Agent):
             outline=str(outline), 
             hooks_list=str(hooks_list),
             psychological_trigger=psychological_trigger, 
-            platform=platform
+            platform=platform,
+            voice_analysis=voice_analysis
         )
         
         # Handle Platform differences
@@ -47,9 +48,8 @@ class DrafterAgent(Agent):
              
              headline = getattr(result, "headline_hook", "Missing Hook")
              body = getattr(result, "main_content", "Missing Content")
-             cta = getattr(result, "interactive_cta", "Missing CTA")
-             
-             print(f"🐛 DEBUG RAW LINKEDIN: Hook={headline[:20]}... BodyLen={len(body)} CTA={cta}")
+             cta = getattr(result, "interactive_cta", "Check comments.")
+             tldr = getattr(result, "tldr", "N/A")
 
              # IMPORTANT: Downstream, the API expects 'tweets' to be the body list.
              # For LinkedIn, we can just put the whole body as one string in the list?
@@ -58,32 +58,30 @@ class DrafterAgent(Agent):
              tweet_list = [body]
              selected_hook = headline # Correctly separated!
              
-             # We attach CTA to the result object so we can grab it later?
-             # Wait, act() returns a dict. We can add more fields if we want, 
-             # but standard schema is {tweets, selected_hook}.
-             # We should probably pass CTA differently or append it?
-             # No, 'Polisher' or workflow usually handles CTA.
-             # But for LinkedIn we bypass Polisher.
-             # So we need to return CTA here so the workflow can pick it up.
-             
              return {
                  "tweets": tweet_list,
                  "selected_hook": selected_hook,
-                 "cta": cta # NEW field for LinkedIn path
+                 "cta": cta,
+                 "tldr": tldr
              }
-             
-        else:
-            # Twitter: result has 'tweet_thread' (list of strings)
-            print(f"🐛 DEBUG RAW DRAFT: {result.tweet_thread!r}")
-            # Safely parse the output back into a list
-            tweet_list = safe_parse_list(result.tweet_thread, fix_with_llm=True)
-            if not tweet_list:
-                 print("⚠️ Warning: Could not parse drafted thread, returning raw string.")
-                 tweet_list = [result.tweet_thread]
-            selected_hook = getattr(result, "selected_hook", tweet_list[0] if tweet_list else "")
+
+        # Default Twitter
+        # result has 'tweet_thread' (list of strings)
+        # Safely parse the output back into a list
+        tweet_list = safe_parse_list(result.tweet_thread, fix_with_llm=True)
+        if not tweet_list:
+             print("⚠️ Warning: Could not parse drafted thread, returning raw string.")
+             tweet_list = [result.tweet_thread]
+        selected_hook = getattr(result, "selected_hook", tweet_list[0] if tweet_list else "")
         
-        print("✅ DrafterAgent finished drafting.")
+        # New: Extract Metadata from One-Shot Output
+        tldr = getattr(result, "tldr", "N/A")
+        cta = getattr(result, "cta", "Check comments.")
+
+        print("✅ DrafterAgent finished drafting (One-Shot Polished).")
         return {
             "tweets": tweet_list,
-            "selected_hook": selected_hook
+            "selected_hook": selected_hook,
+            "tldr": tldr,
+            "cta": cta
         }
