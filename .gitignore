@@ -65,3 +65,6 @@ _bmad-output
 .claude
 
 reproduce_refine.py
+tests_output.txt
+tests/test_rate_limit_fix.py
+tests/test_rate_limit_fix.py

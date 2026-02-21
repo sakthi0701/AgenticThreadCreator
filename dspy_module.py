@@ -429,10 +429,10 @@ class RefineFullPost(dspy.Signature):
     """Refine an entire post based on user feedback (Manual Override).
     
     CRITICAL INSTRUCTIONS:
-    1. **MAINTAIN LENGTH**: Do NOT shorten, summarize, or compress the content unless the instruction explicitly says "make it shorter" or "condense".
-    2. **PRESERVE DETAIL**: Keep ALL examples, statistics, technical terms, and specific details. Do not replace concrete examples with vague generalities.
+    1. **NEVER SHORTEN CONTENT**: Unless the user explicitly writes "make it shorter", "summarize", or "condense", you MUST maintain the exact same length (word count) as the `current_body`.
+    2. **PRESERVE EVERY DETAIL**: Keep ALL examples, statistics, technical terms, analogies, and specific details. Do not replace concrete examples with vague generalities.
     3. **CONTEXT AWARE**: Use the provided topic and audience to ensure the refinement stays on track and maintains relevance.
-    4. **STRUCTURE**: Maintain the original structure (bullet points, lists, paragraphs) unless asked to remove them.
+    4. **STRUCTURE**: Maintain the original structure (bullet points, lists, paragraphs) exactly unless asked to remove them. If the input has 5 bullet points, the output MUST have 5 bullet points.
     5. **PLATFORM RULES**:
        - LinkedIn: STRICTLY NO MARKDOWN. Remove all '**', '*', '##'. Use plain text only.
        - Twitter: Each tweet must be under 280 characters.
@@ -571,7 +571,7 @@ class AgenticThreadCreator(dspy.Module):
         self.drafting_module = DraftingModule()
         # self.polisher_module = PolisherModule() # DEPRECATED
         self.clarifier_module = ClarifierModule(aux_lm=self.aux_lm)
-        self.refine_full_module = dspy.Predict(RefineFullPost)
+        self.refine_full_module = dspy.ChainOfThought(RefineFullPost)
     
     def refine_post_action(self, **kwargs):
         """Wrapper for refine with Kimi context."""
