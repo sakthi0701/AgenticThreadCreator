@@ -164,7 +164,10 @@ async def generate_thread_endpoint(request: ThreadRequest):
         
         groq_result = await run_in_threadpool(run_groq_check)
         
-        if groq_result.get("status") == "CLARIFYING":
+        if groq_result.get("status") == "ERROR":
+            print(f"API: Clarification Error: {groq_result.get('message')}")
+            return {"error": f"Clarification failed: {groq_result.get('message')}"}
+        elif groq_result.get("status") == "CLARIFYING":
             print("API: Clarification Needed (Groq).")
             return {
                 "status": "CLARIFICATION_NEEDED",
