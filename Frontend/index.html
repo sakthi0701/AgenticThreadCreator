@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -810,6 +810,244 @@
         .instructions-content li {
             margin-bottom: 8px;
         }
+
+        /* NIM Model Badge & Streaming */
+        .nim-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: linear-gradient(135deg, #76b900, #4a7c00);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 100px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .model-selector-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            margin-top: 4px;
+            gap: 12px;
+        }
+
+        .model-selector-row label {
+            font-weight: 500;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        #nim-stream-output {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-left: 4px solid #76b900;
+            border-radius: 12px;
+            padding: 20px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            line-height: 1.7;
+            white-space: pre-wrap;
+            color: var(--text-main);
+            min-height: 80px;
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .nim-stream-cursor {
+            display: inline-block;
+            width: 8px;
+            height: 1em;
+            background: #76b900;
+            margin-left: 2px;
+            border-radius: 2px;
+            animation: blink 0.8s step-end infinite;
+            vertical-align: text-bottom;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0;
+            }
+        }
+
+        .btn-nim {
+            background: linear-gradient(135deg, #76b900, #4a7c00) !important;
+        }
+
+        .btn-nim:hover {
+            background: linear-gradient(135deg, #8acc00, #5e9e00) !important;
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 768px) {
+            .model-selector-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .model-selector-row select {
+                width: 100% !important;
+            }
+        }
+
+        /* PRO MODE TOGGLE */
+        .pro-toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, rgba(91, 76, 252, 0.08), rgba(255, 154, 0, 0.06));
+            border: 1px solid rgba(91, 76, 252, 0.2);
+            border-radius: 12px;
+            position: relative;
+        }
+
+        .pro-toggle-row.hidden {
+            display: none;
+        }
+
+        .pro-toggle-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .pro-label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: var(--text-main);
+        }
+
+        .pro-recommended {
+            background: linear-gradient(135deg, #ff9a00, #ff5e00);
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 100px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .pro-caption {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            font-style: italic;
+        }
+
+        .pro-toggle-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--border);
+            border-radius: 26px;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-slider:before {
+            content: "";
+            position: absolute;
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch input:checked+.toggle-slider {
+            background: linear-gradient(135deg, #5b4cfc, #ff9a00);
+            box-shadow: 0 0 12px rgba(91, 76, 252, 0.4);
+        }
+
+        .toggle-switch input:checked+.toggle-slider:before {
+            transform: translateX(22px);
+        }
+
+        /* Quota Badge */
+        .pro-quota-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 100px;
+            background: rgba(91, 76, 252, 0.12);
+            color: #5b4cfc;
+            transition: all 0.3s ease;
+        }
+
+        .pro-quota-badge.low {
+            background: rgba(255, 59, 48, 0.12);
+            color: #ff3b30;
+            animation: pulse 1.5s ease infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+        }
+
+        .btn-pro {
+            background: linear-gradient(135deg, #5b4cfc, #ff9a00) !important;
+        }
+
+        .btn-pro:hover {
+            background: linear-gradient(135deg, #7066ff, #ffae33) !important;
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 768px) {
+            .pro-toggle-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
     </style>
 </head>
 
@@ -820,30 +1058,20 @@
         <div id="toastContainer" class="toast-container"></div>
 
         <div class="header">
-            <h1>Agentic Thread Creator</h1>
+            <h1 style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                Agentic Thread Creator
+                <button
+                    style="font-size: 1.2rem; color: var(--text-muted); background: none; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; height: 32px; width: 32px; border-radius: 50%; opacity: 0.8; transition: opacity 0.2s;"
+                    onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.8'"
+                    onclick="document.getElementById('instructionsModal').classList.remove('hidden')"
+                    title="How to Use">❔</button>
+            </h1>
             <p style="color: var(--text-muted); font-size: 1.1rem;">Turn chaos into viral clarity.</p>
             <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark Mode">🌙</button>
         </div>
 
         <!-- INPUT SECTION (Setup) -->
         <div class="card" id="setupSection">
-            <!-- HOW TO USE DROPDOWN -->
-            <div class="instructions-toggle" onclick="toggleInstructions()">
-                <span>📘 How to Use Agentic Thread Creator</span>
-                <span id="instructionsIcon">▼</span>
-            </div>
-
-            <div id="instructionsContent" class="instructions-content">
-                <ul>
-                    <li><strong>1. Select Profile</strong> → Choose or create a writing persona.</li>
-                    <li><strong>2. Dump Your Idea</strong> → Write raw thoughts, messy is fine.</li>
-                    <li><strong>3. Choose Template</strong> → Or let the agent decide.</li>
-                    <li><strong>4. Select Platform</strong> → Twitter thread or LinkedIn post.</li>
-                    <li><strong>5. Click "Forge Content"</strong> → Agents research, draft & polish.</li>
-                    <li><strong>6. Refine with AI</strong> → Improve tone, punch, clarity.</li>
-                    <li><strong>7. Learn My Style</strong> → Train it to mimic your voice.</li>
-                </ul>
-            </div>
             <div class="flex justify-between items-center mb-4">
                 <h3 style="margin:0;">📝 Draft Your Ideas</h3>
                 <div style="display: flex; gap: 8px;">
@@ -856,8 +1084,8 @@
                 </div>
             </div>
 
-            <textarea id="topicInput" rows="1" placeholder="Dump your ideas here..."
-                oninput="autoResize(this)"></textarea>
+            <textarea id="topicInput" rows="6" style="min-height: 150px; resize: vertical;"
+                placeholder="Dump your ideas here..." oninput="autoResize(this)"></textarea>
 
             <div class="flex justify-between items-center mb-4">
                 <label style="font-weight: 500; color: var(--text-muted); font-size: 0.9rem;">Template:</label>
@@ -882,17 +1110,60 @@
                 </label>
             </div>
 
+            <!-- AI MODEL SELECTOR -->
+            <div class="model-selector-row">
+                <label for="modelSelect">🤖 AI Model:</label>
+                <select id="modelSelect" class="custom-select" onchange="handleModelChange(this)"
+                    style="width:auto; min-width: 220px;">
+                    <option value="gemini">✨ Gemini (Default)</option>
+                    <optgroup label="── NVIDIA NIM ──">
+                        <option value="qwen/qwen3.5-397b-a17b"
+                            title="Model: Qwen3.5 397B (NIM) | ⚡ Fast response | ⭐⭐⭐⭐⭐ quality">🚀 Fast & Detailed
+                        </option>
+                        <option value="meta/llama-3.3-70b-instruct"
+                            title="Model: Llama 3.3 70B (NIM) | ⚡ 3sec response | ⭐⭐⭐⭐ quality">🎨 Creative & Precise
+                        </option>
+                        <option value="deepseek-ai/deepseek-r1"
+                            title="Model: DeepSeek R1 (NIM) | ⚡ 10sec response | ⭐⭐⭐⭐⭐ reasoning">🧠 Advanced Reasoning
+                        </option>
+                        <option value="mistralai/mistral-large-2-instruct"
+                            title="Model: Mistral Large 2 (NIM) | ⚡ 3sec response | ⭐⭐⭐⭐ quality">⚖️ Balanced & Nuanced
+                        </option>
+                        <option value="qwen/qwen3-235b-a22b"
+                            title="Model: Qwen3 235B (NIM) | ⚡ 2sec response | ⭐⭐⭐ quality">⚡ Speed & Efficiency
+                        </option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <!-- PRO MODE TOGGLE -->
+            <div class="pro-toggle-row" id="proToggleRow">
+                <div>
+                    <div class="pro-toggle-left">
+                        <span class="pro-label">⚡ Pro · Deep Intelligence</span>
+                        <span class="pro-recommended">✨ RECOMMENDED</span>
+                    </div>
+                    <div class="pro-caption">Standard may miss key angles. Pro runs every specialist agent for the best
+                        content quality.</div>
+                </div>
+                <div class="pro-toggle-right">
+                    <span class="pro-quota-badge" id="proQuotaBadge">⚡ 3 left today</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="proModeToggle" onchange="handleProToggle(this)">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+
             <!-- CHAT / CLARIFICATION AREA -->
-            <div id="clarificationSection" class="hidden" style="margin-top: 20px;">
+            <div id="clarificationSection" class="hidden" style="margin-top: 20px; margin-bottom: 15px;">
                 <h3 style="margin-bottom: 10px; color: var(--primary);">🤔 Refining Plan...</h3>
                 <div id="clarificationContainer" class="chat-container">
                     <!-- Chat bubbles go here -->
                 </div>
             </div>
 
-
-
-            <button class="btn" id="generateBtn" onclick="startGeneration()" style="margin-top: 20px;">
+            <button class="btn" id="generateBtn" onclick="startGeneration()" style="margin-top: 8px;">
                 <span id="genBtnText">Forge Content</span>
                 <span id="genBtnIcon" class="btn-icon">🪶</span>
             </button>
@@ -928,971 +1199,1427 @@
                     onclick="learnStyle()">🧠 Learn My Style 🧬</button>
             </div>
 
-            <!-- HOOK -->
-            <div class="tweet-box hook-box">
-                <div class="tweet-actions">
-                    <span class="tweet-index">HOOK</span>
-                    <button class="btn-icon" onclick="copyText('hookOutput')" title="Copy">📋</button>
+            <!-- NIM Live Stream Output (only visible when NIM model used) -->
+            <div id="nimOutputSection" class="hidden">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+                    <span class="nim-badge">⚡ NVIDIA NIM</span>
+                    <span id="nimModelLabel" style="color:var(--text-muted); font-size:0.85rem;"></span>
                 </div>
-                <div id="hookOutput" class="tweet-content" contenteditable="true"></div>
+                <div id="nim-stream-output"></div>
             </div>
 
-            <!-- BODY -->
-            <h4 id="bodyTitle" class="mb-4"> Thread Body</h4>
-            <div id="tweetsOutput"></div>
-
-            <!-- ANCILLARY -->
-            <div class="tweet-box cta-box">
-                <div class="tweet-actions">
-                    <span class="tweet-index">CTA & SUMMARY</span>
-                    <button class="btn-icon" onclick="copyText('ctaOutput')" title="Copy">📋</button>
-                </div>
-                <div class="tweet-content">
-                    <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px dashed var(--border);">
-                        <strong
-                            style="color: var(--text-muted); font-size: 0.9em; text-transform: uppercase;">TL;DR</strong><br>
-                        <span id="tldrOutput" style="display: block; margin-top: 4px;"></span>
+            <!-- Standard Gemini Output (hook, tweets, cta) -->
+            <div id="geminiOutputSection">
+                <!-- HOOK -->
+                <div class="tweet-box hook-box">
+                    <div class="tweet-actions">
+                        <span class="tweet-index">HOOK</span>
+                        <button class="btn-icon" onclick="copyText('hookOutput')" title="Copy">📋</button>
                     </div>
-                    <div>
-                        <strong style="color: var(--success); font-size: 0.9em; text-transform: uppercase;">Call to
-                            Action</strong><br>
-                        <span id="ctaOutput" contenteditable="true" style="display: block; margin-top: 4px;"></span>
+                    <div id="hookOutput" class="tweet-content" contenteditable="true"></div>
+                </div>
+
+                <!-- BODY -->
+                <h4 id="bodyTitle" class="mb-4"> Thread Body</h4>
+                <div id="tweetsOutput"></div>
+
+                <!-- ANCILLARY -->
+                <div class="tweet-box cta-box">
+                    <div class="tweet-actions">
+                        <span class="tweet-index">CTA & SUMMARY</span>
+                        <button class="btn-icon" onclick="copyText('ctaOutput')" title="Copy">📋</button>
+                    </div>
+                    <div class="tweet-content">
+                        <div
+                            style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px dashed var(--border);">
+                            <strong
+                                style="color: var(--text-muted); font-size: 0.9em; text-transform: uppercase;">TL;DR</strong><br>
+                            <span id="tldrOutput" style="display: block; margin-top: 4px;"></span>
+                        </div>
+                        <div>
+                            <strong style="color: var(--success); font-size: 0.9em; text-transform: uppercase;">Call to
+                                Action</strong><br>
+                            <span id="ctaOutput" contenteditable="true" style="display: block; margin-top: 4px;"></span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- REFINE SECTION -->
-            <div class="card" style="margin-top: 40px; border-color: var(--primary);">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 style="margin:0; color: var(--primary);">✨ Refine with AI</h3>
-                    <label style="font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
-                        <input type="checkbox" id="diffToggle" onchange="toggleDiffView()">
-                        Show <span class="mobile-hidden-text">Change</span> Diff
-                    </label>
+                <!-- REFINE SECTION -->
+                <div class="card" style="margin-top: 40px; border-color: var(--primary);">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 style="margin:0; color: var(--primary);">✨ Refine with AI</h3>
+                        <label style="font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="diffToggle" onchange="toggleDiffView()">
+                            Show <span class="mobile-hidden-text">Change</span> Diff
+                        </label>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="refinePrompt"
+                            placeholder="e.g. 'Make it punchier', 'Add emojis', 'Focus more on value'..."
+                            style="margin-bottom:0;">
+                        <button class="btn" style="width: auto;" onclick="refineFullPost()">Refine</button>
+                        <button id="undoBtn" class="btn-secondary hidden" style="width: auto;"
+                            onclick="undoRefinement()" title="Undo">↩️</button>
+                        <button id="redoBtn" class="btn-secondary hidden" style="width: auto;"
+                            onclick="redoRefinement()" title="Redo">↪️</button>
+                    </div>
                 </div>
-                <div class="flex gap-2">
-                    <input type="text" id="refinePrompt"
-                        placeholder="e.g. 'Make it punchier', 'Add emojis', 'Focus more on value'..."
-                        style="margin-bottom:0;">
-                    <button class="btn" style="width: auto;" onclick="refineFullPost()">Refine</button>
-                    <button id="undoBtn" class="btn-secondary hidden" style="width: auto;" onclick="undoRefinement()"
-                        title="Undo">↩️</button>
-                    <button id="redoBtn" class="btn-secondary hidden" style="width: auto;" onclick="redoRefinement()"
-                        title="Redo">↪️</button>
+
+            </div><!-- /.gemini-output-section -->
+
+        </div><!-- /#outputSection -->
+
+        <!-- Settings Modal -->
+        <div id="settingsModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalTitle">Edit Profile</h2>
+                    <span class="close-btn" onclick="closeModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Profile Name</label>
+                        <input type="text" id="p_name" class="form-input" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Target Audience</label>
+                        <input type="text" id="p_audience" class="form-input" placeholder="e.g. VCs and Founders">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tone of Voice</label>
+                        <input type="text" id="p_tone" class="form-input" placeholder="e.g. Contrarian, punchy">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Forbidden Words (comma separated)</label>
+                        <input type="text" id="p_badwords" class="form-input" placeholder="delve, foster, ...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Voice Analysis (AI Generated)</label>
+                        <textarea id="p_style_analysis" class="form-input" rows="3"
+                            placeholder="Click 'Learn My Style' to populate this..."></textarea>
+                    </div>
+                    <button class="btn" onclick="saveProfile()" style="margin-top: 10px;">Save
+                        Profile</button>
                 </div>
             </div>
-
         </div>
 
-    </div>
+        <script>
+            // ⚠️ PRODUCTION CONFIGURATION ⚠️
+            // If you are running locally, keep this as is.
+            // If deploying to Netlify, replace the second string with your actual Cloud Run URL.
+            /* const API_URL = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')
+                ? "http://127.0.0.1:8000"
+                : "https://YOUR-CLOUD-RUN-SERVICE-URL.a.run.app"; */
+            const isLocal = window.location.hostname === '127.0.0.1' ||
+                window.location.hostname === 'localhost' ||
+                window.location.protocol === 'file:';
 
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="modalTitle">Edit Profile</h2>
-                <span class="close-btn" onclick="closeModal()">&times;</span>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label class="form-label">Profile Name</label>
-                    <input type="text" id="p_name" class="form-input" disabled>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Target Audience</label>
-                    <input type="text" id="p_audience" class="form-input" placeholder="e.g. VCs and Founders">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Tone of Voice</label>
-                    <input type="text" id="p_tone" class="form-input" placeholder="e.g. Contrarian, punchy">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Forbidden Words (comma separated)</label>
-                    <input type="text" id="p_badwords" class="form-input" placeholder="delve, foster, ...">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Voice Analysis (AI Generated)</label>
-                    <textarea id="p_style_analysis" class="form-input" rows="3"
-                        placeholder="Click 'Learn My Style' to populate this..."></textarea>
-                </div>
-                <button class="btn" onclick="saveProfile()" style="margin-top: 10px;">Save
-                    Profile</button>
-            </div>
-        </div>
-    </div>
+            const API_URL = isLocal
+                ? "http://127.0.0.1:8080"
+                : "https://agenticthreadcreator-670481574212.asia-south1.run.app";
 
-    <script>
-        // ⚠️ PRODUCTION CONFIGURATION ⚠️
-        // If you are running locally, keep this as is.
-        // If deploying to Netlify, replace the second string with your actual Cloud Run URL.
-        /* const API_URL = (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')
-            ? "http://127.0.0.1:8000"
-            : "https://YOUR-CLOUD-RUN-SERVICE-URL.a.run.app"; */
-        const isLocal = window.location.hostname === '127.0.0.1' ||
-            window.location.hostname === 'localhost' ||
-            window.location.protocol === 'file:';
+            // State for persistence
+            let progressInterval = null; // Timer for fake progress
+            let state = {
+                currentHook: "",
+                currentTweets: [],
+                currentCta: "",
+                currentTldr: "",
 
-        const API_URL = isLocal
-            ? "http://127.0.0.1:8000"
-            : "https://agenticthreadcreator-670481574212.asia-south1.run.app";
+                // Undo/Redo Engine
+                history: [],
+                historyIndex: -1,
 
-        // State for persistence
-        let progressInterval = null; // Timer for fake progress
-        let state = {
-            currentHook: "",
-            currentTweets: [],
-            currentCta: "",
-            currentTldr: "",
-
-            // Undo/Redo Engine
-            history: [],
-            historyIndex: -1,
-
-            hasRefined: false, // Tracks if we are showing a diff
-            profiles: {} // To store loaded profiles
-        };
-
-        // Helper to save history state
-        function __saveToHistory(hook, tweets, cta, isRefinement = false) {
-            // If we are not at the end of the history array when saving, 
-            // truncate the "future" (redo states) because we diverged.
-            if (state.historyIndex < state.history.length - 1) {
-                state.history = state.history.slice(0, state.historyIndex + 1);
-            }
-
-            state.history.push({
-                hook: hook,
-                tweets: [...tweets],
-                cta: cta,
-                isRefinement: isRefinement // Used to conditionally trigger diff view
-            });
-            state.historyIndex++;
-            __updateUndoRedoButtons();
-        }
-
-        function __updateUndoRedoButtons() {
-            const undoBtn = document.getElementById('undoBtn');
-            const redoBtn = document.getElementById('redoBtn');
-
-            if (state.historyIndex > 0) {
-                undoBtn.classList.remove('hidden');
-            } else {
-                undoBtn.classList.add('hidden');
-            }
-
-            if (state.historyIndex < state.history.length - 1) {
-                redoBtn.classList.remove('hidden');
-            } else {
-                redoBtn.classList.add('hidden');
-            }
-        }
-
-        // Auto-Resize Textarea
-        function autoResize(el) {
-            el.style.height = 'auto';
-            el.style.height = el.scrollHeight + 'px';
-        }
-
-        // --- 1. THEME LOGIC ---
-        function toggleTheme() {
-            const body = document.body;
-            const btn = document.querySelector('.theme-toggle');
-            if (body.getAttribute('data-theme') === 'dark') {
-                body.setAttribute('data-theme', 'light');
-                btn.innerText = '🌙';
-            } else {
-                body.setAttribute('data-theme', 'dark');
-                btn.innerText = '☀️';
-            }
-        }
-
-        function toggleInstructions() {
-            const content = document.getElementById("instructionsContent");
-            const icon = document.getElementById("instructionsIcon");
-
-            content.classList.toggle("open");
-
-            if (content.classList.contains("open")) {
-                icon.innerText = "▲";
-            } else {
-                icon.innerText = "▼";
-            }
-        }
-
-        // --- 2. PLATFORM LOGIC ---
-        function togglePlatform(radio) {
-            document.querySelectorAll('.platform-option').forEach(el => el.classList.remove('selected'));
-            radio.parentElement.classList.add('selected');
-            document.getElementById('bodyTitle').innerText = radio.value === 'LinkedIn' ? "💼 Post Body" : "📱 Thread Body";
-        }
-
-        // --- 3. LIVE BRAIN LOGIC ---
-        function updateBrainStep(stepNum, status) {
-            const el = document.getElementById(`step-${stepNum}`);
-            const icon = el.querySelector('.step-icon');
-            el.className = `brain-step ${status}`; // status: 'active', 'done', ''
-            if (status === 'active') icon.innerText = '⏳';
-            if (status === 'done') icon.innerText = '✅';
-            if (status === '') icon.innerText = '○';
-        }
-
-        function resetBrain() {
-            for (let i = 1; i <= 5; i++) updateBrainStep(i, '');
-        }
-
-        async function loadProfiles() {
-            try {
-                let stored = localStorage.getItem("user_profiles");
-                if (!stored) {
-                    // Default Data for New Users
-                    const defaultData = {
-                        "default_profile": "tech_founder",
-                        "profiles": {
-                            "tech_founder": {
-                                "audience": "VCs, Engineers, and Founders",
-                                "tone": "Contrarian, Punchy, Direct",
-                                "forbidden_words": ["delve", "foster", "landscape", "crucial"]
-                            }
-                        }
-                    };
-                    stored = JSON.stringify(defaultData);
-                    localStorage.setItem("user_profiles", stored);
-                }
-
-                const data = JSON.parse(stored);
-
-                const sel = document.getElementById('profileSelect');
-                sel.innerHTML = "";
-
-                // Add default first
-                const def = data.default_profile;
-                for (const [key, val] of Object.entries(data.profiles)) {
-                    const opt = document.createElement('option');
-                    opt.value = key;
-                    opt.innerText = key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-                    if (key === def) opt.selected = true;
-                    sel.appendChild(opt);
-                }
-                // Add 'New' option
-                const newOpt = document.createElement('option');
-                newOpt.value = "new_profile";
-                newOpt.innerText = "+ Add New Profile";
-                sel.appendChild(newOpt);
-
-                state.profiles = data.profiles; // Store locally
-            } catch (e) {
-                console.error("Failed to load profiles", e);
-                const sel = document.getElementById('profileSelect');
-                sel.innerHTML = `<option disabled selected>Error loading profiles (${e.message})</option>`;
-            }
-        }
-
-        // Load on start
-        loadProfiles();
-
-        function handleProfileChange(el) {
-            if (el.value === "new_profile") {
-                // Open editor for new
-                openProfileEditor(true);
-            }
-        }
-
-        function openProfileEditor(isNew = false) {
-            const modal = document.getElementById('settingsModal');
-            const nameInput = document.getElementById('p_name');
-            const sel = document.getElementById('profileSelect');
-            let currentName = sel.value;
-
-            if (isNew) {
-                const newName = prompt("Enter a unique name for the new profile:");
-                if (!newName) return;
-                // create a temp empty profile in state if needed or just let them fill it
-                currentName = newName.toLowerCase().replace(/\s+/g, '_');
-                // Create valid entry in state if not exists
-                if (!state.profiles[currentName]) {
-                    state.profiles[currentName] = { audience: "", tone: "", forbidden_words: [] };
-                }
-            } else {
-                if (currentName === 'new_profile') return; // Should have been handled
-            }
-
-            // Populate Modal
-            const pData = state.profiles[currentName] || {};
-            nameInput.value = currentName;
-            document.getElementById('p_audience').value = pData.audience || "";
-            document.getElementById('p_tone').value = pData.tone || "";
-            document.getElementById('p_tone').value = pData.tone || "";
-            document.getElementById('p_badwords').value = (pData.forbidden_words || []).join(", ");
-            document.getElementById('p_style_analysis').value = pData.style_analysis || "";
-
-            document.getElementById('modalTitle').innerText = isNew ? "Create New Profile" : "Edit Profile: " + currentName;
-
-            modal.style.display = "block";
-        }
-
-        function closeModal() {
-            document.getElementById('settingsModal').style.display = "none";
-        }
-
-        async function saveProfile() {
-            const nameInput = document.getElementById('p_name');
-            const name = nameInput.value;
-            if (!name) return showToast("Profile name is required", "error");
-
-            const profileData = {
-                audience: document.getElementById('p_audience').value,
-                tone: document.getElementById('p_tone').value,
-                tone: document.getElementById('p_tone').value,
-                forbidden_words: document.getElementById('p_badwords').value.split(',').map(s => s.trim()).filter(s => s),
-                style_analysis: document.getElementById('p_style_analysis').value
+                hasRefined: false, // Tracks if we are showing a diff
+                profiles: {} // To store loaded profiles
             };
 
-            try {
-                // Optimistic Update
-                state.profiles[name] = profileData;
+            // Helper to save history state
+            function __saveToHistory(hook, tweets, cta, isRefinement = false) {
+                // If we are not at the end of the history array when saving, 
+                // truncate the "future" (redo states) because we diverged.
+                if (state.historyIndex < state.history.length - 1) {
+                    state.history = state.history.slice(0, state.historyIndex + 1);
+                }
 
-                // Save to LocalStorage
-                const storageData = {
-                    default_profile: document.getElementById('profileSelect').value || name,
-                    profiles: state.profiles
-                };
-                localStorage.setItem("user_profiles", JSON.stringify(storageData));
-
-                showToast("Profile Saved Locally!", "success");
-                closeModal();
-                loadProfiles(); // Refresh dropdown
-                // Set selection to saved
-                setTimeout(() => {
-                    document.getElementById('profileSelect').value = name;
-                }, 500);
-
-            } catch (e) {
-                showToast("Failed to save profile: " + e.message, "error");
-            }
-        }
-
-        // Close modal on click outside
-        window.onclick = function (event) {
-            const modal = document.getElementById('settingsModal');
-            if (event.target == modal) {
-                modal.style.display = "none";
-            }
-        }
-
-        async function startGeneration() {
-            const topicInput = document.getElementById('topicInput');
-            const topic = topicInput.value;
-            const platform = document.querySelector('input[name="platform"]:checked').value;
-            const profile = document.getElementById('profileSelect').value;
-
-            if (!topic) return showToast("Please enter a topic!", "error");
-
-            // UI Updates
-            const btn = document.getElementById('generateBtn');
-            const brain = document.getElementById('liveBrain');
-
-            // Auto Scroll
-            brain.style.display = 'block';
-            document.getElementById('workingSection').classList.remove('hidden'); // Show container
-            brain.scrollIntoView({ behavior: 'smooth' });
-
-            // Disable button to prevent double-submit
-            btn.disabled = true;
-            const btnText = document.getElementById('genBtnText');
-            if (btnText) btnText.innerText = "Forging...";
-
-            document.getElementById('outputSection').classList.add('hidden');
-
-            // Render Chat Container if not exists
-            const container = document.getElementById('clarificationContainer');
-            container.innerHTML = ""; // Clear previous chat
-            state.clarificationHistory = []; // Reset history
-
-            await runGenerationLoop(topic);
-        }
-
-        async function runGenerationLoop(topic) {
-            updateBrainStep(1, 'active');
-
-            // Simulate progress for UX (since backend is monolithic)
-            simulateProgress();
-
-            try {
-                const pKey = document.getElementById('profileSelect').value;
-                const pData = state.profiles[pKey] || {};
-
-                const payload = {
-                    topic: topic,
-                    template: document.getElementById('templateSelect').value,
-                    platform: document.querySelector('input[name="platform"]:checked').value,
-                    profile_name: pKey,
-                    clarification_history: state.clarificationHistory,
-                    audience: pData.audience || "",
-                    tone: pData.tone || "",
-                    forbidden_words: pData.forbidden_words || []
-                };
-
-                const res = await fetch(`${API_URL}/generate-thread`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                state.history.push({
+                    hook: hook,
+                    tweets: [...tweets],
+                    cta: cta,
+                    isRefinement: isRefinement // Used to conditionally trigger diff view
                 });
+                state.historyIndex++;
+                __updateUndoRedoButtons();
+            }
 
-                const data = await res.json();
+            function __updateUndoRedoButtons() {
+                const undoBtn = document.getElementById('undoBtn');
+                const redoBtn = document.getElementById('redoBtn');
 
-                if (data.status === "CLARIFICATION_NEEDED") {
-                    // Render Question
-                    const clarSection = document.getElementById('clarificationSection');
-                    if (clarSection) clarSection.classList.remove('hidden');
-
-                    renderClarificationQuestion(data.question, data.type, data.options, topic);
-                }
-                else if (data.status === "COMPLETED") {
-                    updateBrainStep(1, 'done');
-                    // ... (rest of completion logic) ...
-                    handleCompletion(data);
-                }
-                else if (data.error) {
-                    throw new Error(data.error);
+                if (state.historyIndex > 0) {
+                    undoBtn.classList.remove('hidden');
+                } else {
+                    undoBtn.classList.add('hidden');
                 }
 
-            } catch (e) {
-                showToast("Error: " + e.message, "error");
-                document.getElementById('setupSection').classList.remove('hidden');
-                document.getElementById('workingSection').classList.add('hidden');
+                if (state.historyIndex < state.history.length - 1) {
+                    redoBtn.classList.remove('hidden');
+                } else {
+                    redoBtn.classList.add('hidden');
+                }
+            }
 
-                // Re-enable button on error
+            // Auto-Resize Textarea
+            function autoResize(el) {
+                el.style.height = 'auto';
+                el.style.height = el.scrollHeight + 'px';
+            }
+
+            // --- 1. THEME LOGIC ---
+            function toggleTheme() {
+                const body = document.body;
+                const btn = document.querySelector('.theme-toggle');
+                if (body.getAttribute('data-theme') === 'dark') {
+                    body.setAttribute('data-theme', 'light');
+                    btn.innerText = '🌙';
+                } else {
+                    body.setAttribute('data-theme', 'dark');
+                    btn.innerText = '☀️';
+                }
+            }
+
+            // toggleInstructions replaced by Modal
+
+            // --- 2. PLATFORM LOGIC ---
+            function togglePlatform(radio) {
+                document.querySelectorAll('.platform-option').forEach(el => el.classList.remove('selected'));
+                radio.parentElement.classList.add('selected');
+                document.getElementById('bodyTitle').innerText = radio.value === 'LinkedIn' ? "💼 Post Body" : "📱 Thread Body";
+            }
+
+            // --- 3. LIVE BRAIN LOGIC ---
+            function updateBrainStep(stepNum, status) {
+                const el = document.getElementById(`step-${stepNum}`);
+                const icon = el.querySelector('.step-icon');
+                el.className = `brain-step ${status}`; // status: 'active', 'done', ''
+                if (status === 'active') icon.innerText = '⏳';
+                if (status === 'done') icon.innerText = '✅';
+                if (status === '') icon.innerText = '○';
+            }
+
+            function resetBrain() {
+                for (let i = 1; i <= 5; i++) updateBrainStep(i, '');
+            }
+
+            async function loadProfiles() {
+                try {
+                    let stored = localStorage.getItem("user_profiles");
+                    if (!stored) {
+                        // Default Data for New Users
+                        const defaultData = {
+                            "default_profile": "tech_founder",
+                            "profiles": {
+                                "tech_founder": {
+                                    "audience": "VCs, Engineers, and Founders",
+                                    "tone": "Contrarian, Punchy, Direct",
+                                    "forbidden_words": ["delve", "foster", "landscape", "crucial"]
+                                }
+                            }
+                        };
+                        stored = JSON.stringify(defaultData);
+                        localStorage.setItem("user_profiles", stored);
+                    }
+
+                    const data = JSON.parse(stored);
+
+                    const sel = document.getElementById('profileSelect');
+                    sel.innerHTML = "";
+
+                    // Add default first
+                    const def = data.default_profile;
+                    for (const [key, val] of Object.entries(data.profiles)) {
+                        const opt = document.createElement('option');
+                        opt.value = key;
+                        opt.innerText = key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        if (key === def) opt.selected = true;
+                        sel.appendChild(opt);
+                    }
+                    // Add 'New' option
+                    const newOpt = document.createElement('option');
+                    newOpt.value = "new_profile";
+                    newOpt.innerText = "+ Add New Profile";
+                    sel.appendChild(newOpt);
+
+                    state.profiles = data.profiles; // Store locally
+                } catch (e) {
+                    console.error("Failed to load profiles", e);
+                    const sel = document.getElementById('profileSelect');
+                    sel.innerHTML = `<option disabled selected>Error loading profiles (${e.message})</option>`;
+                }
+            }
+
+            // Load on start
+            loadProfiles();
+
+            function handleProfileChange(el) {
+                if (el.value === "new_profile") {
+                    // Open editor for new
+                    openProfileEditor(true);
+                }
+            }
+
+            function openProfileEditor(isNew = false) {
+                const modal = document.getElementById('settingsModal');
+                const nameInput = document.getElementById('p_name');
+                const sel = document.getElementById('profileSelect');
+                let currentName = sel.value;
+
+                if (isNew) {
+                    const newName = prompt("Enter a unique name for the new profile:");
+                    if (!newName) return;
+                    // create a temp empty profile in state if needed or just let them fill it
+                    currentName = newName.toLowerCase().replace(/\s+/g, '_');
+                    // Create valid entry in state if not exists
+                    if (!state.profiles[currentName]) {
+                        state.profiles[currentName] = { audience: "", tone: "", forbidden_words: [] };
+                    }
+                } else {
+                    if (currentName === 'new_profile') return; // Should have been handled
+                }
+
+                // Populate Modal
+                const pData = state.profiles[currentName] || {};
+                nameInput.value = currentName;
+                document.getElementById('p_audience').value = pData.audience || "";
+                document.getElementById('p_tone').value = pData.tone || "";
+                document.getElementById('p_tone').value = pData.tone || "";
+                document.getElementById('p_badwords').value = (pData.forbidden_words || []).join(", ");
+                document.getElementById('p_style_analysis').value = pData.style_analysis || "";
+
+                document.getElementById('modalTitle').innerText = isNew ? "Create New Profile" : "Edit Profile: " + currentName;
+
+                modal.style.display = "block";
+            }
+
+            function closeModal() {
+                document.getElementById('settingsModal').style.display = "none";
+            }
+
+            async function saveProfile() {
+                const nameInput = document.getElementById('p_name');
+                const name = nameInput.value;
+                if (!name) return showToast("Profile name is required", "error");
+
+                const profileData = {
+                    audience: document.getElementById('p_audience').value,
+                    tone: document.getElementById('p_tone').value,
+                    tone: document.getElementById('p_tone').value,
+                    forbidden_words: document.getElementById('p_badwords').value.split(',').map(s => s.trim()).filter(s => s),
+                    style_analysis: document.getElementById('p_style_analysis').value
+                };
+
+                try {
+                    // Optimistic Update
+                    state.profiles[name] = profileData;
+
+                    // Save to LocalStorage
+                    const storageData = {
+                        default_profile: document.getElementById('profileSelect').value || name,
+                        profiles: state.profiles
+                    };
+                    localStorage.setItem("user_profiles", JSON.stringify(storageData));
+
+                    showToast("Profile Saved Locally!", "success");
+                    closeModal();
+                    loadProfiles(); // Refresh dropdown
+                    // Set selection to saved
+                    setTimeout(() => {
+                        document.getElementById('profileSelect').value = name;
+                    }, 500);
+
+                } catch (e) {
+                    showToast("Failed to save profile: " + e.message, "error");
+                }
+            }
+
+            // Close modal on click outside
+            window.onclick = function (event) {
+                const modal = document.getElementById('settingsModal');
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            }
+
+            async function startGeneration() {
+                const topicInput = document.getElementById('topicInput');
+                const topic = topicInput.value;
+                const platform = document.querySelector('input[name="platform"]:checked').value;
+                const profile = document.getElementById('profileSelect').value;
+                const selectedModel = document.getElementById('modelSelect').value;
+
+                if (!topic) return showToast("Please enter a topic!", "error");
+
+                // UI Updates
+                const btn = document.getElementById('generateBtn');
+                const brain = document.getElementById('liveBrain');
+
+                // Auto Scroll
+                brain.style.display = 'block';
+                document.getElementById('workingSection').classList.remove('hidden'); // Show container
+                brain.scrollIntoView({ behavior: 'smooth' });
+
+                // Disable button to prevent double-submit
+                btn.disabled = true;
+                const btnText = document.getElementById('genBtnText');
+                if (btnText) btnText.innerText = "Forging...";
+
+                document.getElementById('outputSection').classList.add('hidden');
+
+                // Render Chat Container if not exists
+                const container = document.getElementById('clarificationContainer');
+                container.innerHTML = ""; // Clear previous chat
+                state.clarificationHistory = []; // Reset history
+
+                if (selectedModel === 'gemini') {
+                    await runGenerationLoop(topic);
+                } else {
+                    // NIM path: clarification first via runGenerationLoop,
+                    // but with nimModel flag set so on COMPLETED it routes to NIM
+                    state.nimModel = selectedModel;
+                    await runNimClarificationLoop(topic);
+                }
+            }
+
+            async function runGenerationLoop(topic) {
+                updateBrainStep(1, 'active');
+
+                // Simulate progress for UX (since backend is monolithic)
+                simulateProgress();
+
+                try {
+                    const pKey = document.getElementById('profileSelect').value;
+                    const pData = state.profiles[pKey] || {};
+
+                    const proMode = document.getElementById('proModeToggle')?.checked || false;
+                    const payload = {
+                        topic: topic,
+                        template: document.getElementById('templateSelect').value,
+                        platform: document.querySelector('input[name="platform"]:checked').value,
+                        profile_name: pKey,
+                        clarification_history: state.clarificationHistory,
+                        audience: pData.audience || "",
+                        tone: pData.tone || "",
+                        forbidden_words: pData.forbidden_words || [],
+                        pro_mode: proMode
+                    };
+
+                    const res = await fetch(`${API_URL}/generate-thread`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const data = await res.json();
+
+                    if (data.status === "CLARIFICATION_NEEDED") {
+                        // Render Question
+                        const clarSection = document.getElementById('clarificationSection');
+                        if (clarSection) clarSection.classList.remove('hidden');
+
+                        renderClarificationQuestion(data.question, data.type, data.options, topic);
+                    }
+                    else if (data.status === "COMPLETED") {
+                        updateBrainStep(1, 'done');
+                        // ... (rest of completion logic) ...
+                        handleCompletion(data);
+                    }
+                    else if (data.error) {
+                        throw new Error(data.error);
+                    }
+
+                } catch (e) {
+                    showToast("Error: " + e.message, "error");
+                    document.getElementById('setupSection').classList.remove('hidden');
+                    document.getElementById('workingSection').classList.add('hidden');
+
+                    // Re-enable button on error
+                    const btn = document.getElementById('generateBtn');
+                    if (btn) btn.disabled = false;
+                    const btnText = document.getElementById('genBtnText');
+                    if (btnText) btnText.innerText = "Forge Content";
+                }
+            }
+
+            function renderClarificationQuestion(question, type, options, topic) {
+                const container = document.getElementById('clarificationContainer');
+
+                // Chat Bubble (Bot)
+                const botMsg = document.createElement('div');
+                botMsg.className = 'chat-msg bot';
+                botMsg.innerText = question;
+                container.appendChild(botMsg);
+
+                // Input Area
+                const inputDiv = document.createElement('div');
+                inputDiv.className = 'chat-input-area';
+
+                if (type === 'mcq' && options && options.length > 0) {
+                    // Render Buttons
+                    options.forEach(opt => {
+                        const btn = document.createElement('button');
+                        btn.className = 'btn-secondary btn-sm';
+                        btn.innerText = opt;
+                        btn.onclick = () => submitAnswer(question, opt, topic);
+                        inputDiv.appendChild(btn);
+                        // Add slight margin
+                        btn.style.marginRight = "5px";
+                        btn.style.marginBottom = "5px";
+                    });
+                } else {
+                    // Render Text Input
+                    const txt = document.createElement('input');
+                    txt.type = 'text';
+                    txt.className = 'form-input';
+                    txt.placeholder = 'Type your answer...';
+                    txt.onkeypress = (e) => {
+                        if (e.key === 'Enter') submitAnswer(question, txt.value, topic);
+                    };
+                    inputDiv.appendChild(txt);
+
+                    const sendBtn = document.createElement('button');
+                    sendBtn.className = 'btn btn-sm';
+                    sendBtn.innerText = 'Send';
+                    sendBtn.onclick = () => submitAnswer(question, txt.value, topic);
+                    inputDiv.appendChild(sendBtn);
+                }
+
+                container.appendChild(inputDiv);
+                container.scrollTop = container.scrollHeight;
+            }
+
+            async function submitAnswer(question, answer, topic) {
+                if (!answer.trim()) return;
+
+                const container = document.getElementById('clarificationContainer');
+
+                // Remove Input Area
+                const inputArea = container.querySelector('.chat-input-area');
+                if (inputArea) inputArea.remove();
+
+                // User Bubble
+                const userMsg = document.createElement('div');
+                userMsg.className = 'chat-msg user';
+                userMsg.innerText = answer;
+                container.appendChild(userMsg);
+
+                // Update History
+                state.clarificationHistory.push({ role: 'assistant', content: question });
+                state.clarificationHistory.push({ role: 'user', content: answer });
+
+                // Show Thinking...
+                const thinkMsg = document.createElement('div');
+                thinkMsg.className = 'chat-msg system';
+                thinkMsg.innerText = 'Thinking...';
+                thinkMsg.id = 'tempThinking';
+                container.appendChild(thinkMsg);
+                container.scrollTop = container.scrollHeight;
+
+                // Switch to Working Section to show progress
+                document.getElementById('clarificationSection').classList.add('hidden');
+                document.getElementById('workingSection').classList.remove('hidden');
+
+                // Loop
+                await runGenerationLoop(topic);
+
+                // Note: runGenerationLoop will either re-show clarification if needed
+                // OR finish. So we don't need to manually remove 'Thinking' bubble
+                // because the whole container is hidden now.
+            }
+
+            async function handleCompletion(data) {
+                // 1. Stop the fake timer
+                clearInterval(progressInterval);
+
+                // 2. Visually complete all steps (Satisfying "Green" flash)
+                for (let i = 1; i <= 5; i++) {
+                    updateBrainStep(i, 'done');
+                }
+
+                // 3. Wait a tiny bit so user sees "All Done"
+                await new Promise(r => setTimeout(r, 600));
+
+                const working = document.getElementById('workingSection');
+                if (working) working.classList.add('hidden');
+
+                const output = document.getElementById('outputSection');
+                if (output) output.classList.remove('hidden');
+
+                // 3.5 [NEW] Simulate typing effect for Gemini
+                document.getElementById('nimOutputSection').classList.remove('hidden');
+                document.getElementById('geminiOutputSection').style.display = 'none';
+
+                const isProMode = document.getElementById('proModeToggle')?.checked || false;
+                document.getElementById('nimModelLabel').innerText = 'Gemini' + (isProMode ? ' · PRO' : ' · Standard');
+
+                const streamDiv = document.getElementById('nim-stream-output');
+                streamDiv.style.maxHeight = ''; // reset just in case
+                streamDiv.style.padding = '';
+                streamDiv.style.border = '';
+                streamDiv.style.overflow = '';
+                streamDiv.innerHTML = '<span class="nim-stream-cursor"></span>';
+
+                const fakeText = `HOOK: ${data.hook}\n\nBODY:\n${data.tweets.join('\n\n')}\n\nCTA: ${data.cta}\n\nTLDR: ${data.tldr}`;
+                let typedText = '';
+
+                // Simulate fast typing
+                for (let i = 0; i < fakeText.length; i += 3) {
+                    typedText += fakeText.substring(i, i + 3);
+                    streamDiv.innerHTML = escapeHtml(typedText) + '<span class="nim-stream-cursor"></span>';
+                    await new Promise(r => setTimeout(r, 5));
+                }
+
+                // Hide stream gracefully
+                streamDiv.style.maxHeight = '0';
+                streamDiv.style.overflow = 'hidden';
+                streamDiv.style.padding = '0';
+                streamDiv.style.border = 'none';
+                streamDiv.innerHTML = '';
+
+                // 4. Update Data State
+                state.currentHook = data.hook;
+                state.currentTweets = data.tweets;
+                state.currentCta = data.cta;
+                state.currentTldr = data.tldr;
+                state.currentInteractionId = data.interaction_id; // [NEW] Store Correlation ID
+
+                // Initialize History Stack with original generation
+                state.history = [];
+                state.historyIndex = -1;
+                __saveToHistory(data.hook, data.tweets, data.cta, false);
+
+                state.hasRefined = false;
+
+                // 5. Swap Views
+                document.getElementById('geminiOutputSection').style.display = 'block';
+
+                // 6. Render & Cleanup
+                renderAll();
+                resetBrain();
+
+                // Re-enable button
                 const btn = document.getElementById('generateBtn');
                 if (btn) btn.disabled = false;
                 const btnText = document.getElementById('genBtnText');
-                if (btnText) btnText.innerText = "Forge Content";
-            }
-        }
-
-        function renderClarificationQuestion(question, type, options, topic) {
-            const container = document.getElementById('clarificationContainer');
-
-            // Chat Bubble (Bot)
-            const botMsg = document.createElement('div');
-            botMsg.className = 'chat-msg bot';
-            botMsg.innerText = question;
-            container.appendChild(botMsg);
-
-            // Input Area
-            const inputDiv = document.createElement('div');
-            inputDiv.className = 'chat-input-area';
-
-            if (type === 'mcq' && options && options.length > 0) {
-                // Render Buttons
-                options.forEach(opt => {
-                    const btn = document.createElement('button');
-                    btn.className = 'btn-secondary btn-sm';
-                    btn.innerText = opt;
-                    btn.onclick = () => submitAnswer(question, opt, topic);
-                    inputDiv.appendChild(btn);
-                    // Add slight margin
-                    btn.style.marginRight = "5px";
-                    btn.style.marginBottom = "5px";
-                });
-            } else {
-                // Render Text Input
-                const txt = document.createElement('input');
-                txt.type = 'text';
-                txt.className = 'form-input';
-                txt.placeholder = 'Type your answer...';
-                txt.onkeypress = (e) => {
-                    if (e.key === 'Enter') submitAnswer(question, txt.value, topic);
-                };
-                inputDiv.appendChild(txt);
-
-                const sendBtn = document.createElement('button');
-                sendBtn.className = 'btn btn-sm';
-                sendBtn.innerText = 'Send';
-                sendBtn.onclick = () => submitAnswer(question, txt.value, topic);
-                inputDiv.appendChild(sendBtn);
-            }
-
-            container.appendChild(inputDiv);
-            container.scrollTop = container.scrollHeight;
-        }
-
-        async function submitAnswer(question, answer, topic) {
-            if (!answer.trim()) return;
-
-            const container = document.getElementById('clarificationContainer');
-
-            // Remove Input Area
-            const inputArea = container.querySelector('.chat-input-area');
-            if (inputArea) inputArea.remove();
-
-            // User Bubble
-            const userMsg = document.createElement('div');
-            userMsg.className = 'chat-msg user';
-            userMsg.innerText = answer;
-            container.appendChild(userMsg);
-
-            // Update History
-            state.clarificationHistory.push({ role: 'assistant', content: question });
-            state.clarificationHistory.push({ role: 'user', content: answer });
-
-            // Show Thinking...
-            const thinkMsg = document.createElement('div');
-            thinkMsg.className = 'chat-msg system';
-            thinkMsg.innerText = 'Thinking...';
-            thinkMsg.id = 'tempThinking';
-            container.appendChild(thinkMsg);
-            container.scrollTop = container.scrollHeight;
-
-            // Switch to Working Section to show progress
-            document.getElementById('clarificationSection').classList.add('hidden');
-            document.getElementById('workingSection').classList.remove('hidden');
-
-            // Loop
-            await runGenerationLoop(topic);
-
-            // Note: runGenerationLoop will either re-show clarification if needed
-            // OR finish. So we don't need to manually remove 'Thinking' bubble
-            // because the whole container is hidden now.
-        }
-
-        async function handleCompletion(data) {
-            // 1. Stop the fake timer
-            clearInterval(progressInterval);
-
-            // 2. Visually complete all steps (Satisfying "Green" flash)
-            for (let i = 1; i <= 5; i++) {
-                updateBrainStep(i, 'done');
-            }
-
-            // 3. Wait a tiny bit so user sees "All Done"
-            await new Promise(r => setTimeout(r, 600));
-
-            // 4. Update Data State
-            state.currentHook = data.hook;
-            state.currentTweets = data.tweets;
-            state.currentCta = data.cta;
-            state.currentTldr = data.tldr;
-            state.currentInteractionId = data.interaction_id; // [NEW] Store Correlation ID
-
-            // Initialize History Stack with original generation
-            state.history = [];
-            state.historyIndex = -1;
-            __saveToHistory(data.hook, data.tweets, data.cta, false);
-
-            state.hasRefined = false;
-
-            // 5. Swap Views
-            const working = document.getElementById('workingSection');
-            if (working) working.classList.add('hidden');
-
-            const output = document.getElementById('outputSection');
-            if (output) output.classList.remove('hidden');
-
-            // 6. Render & Cleanup
-            renderAll();
-            resetBrain();
-
-            // Re-enable button
-            const btn = document.getElementById('generateBtn');
-            if (btn) btn.disabled = false;
-            const btnText = document.getElementById('genBtnText');
-            if (btnText) btnText.innerText = "Forge Content";
-        }
-
-        function simulateProgress() {
-            if (progressInterval) clearInterval(progressInterval);
-            let step = 2;
-            // 2=Research, 3=Draft, 4=Polish, 5=Done
-
-            progressInterval = setInterval(() => {
-                // CHANGED: step > 5 allows Step 5 to become active
-                if (step > 5) {
-                    clearInterval(progressInterval);
-                    return;
+                if (btnText) {
+                    btnText.innerText = isProMode ? 'Deep Forge' : 'Forge Content';
                 }
 
-                // Mark prev done
-                updateBrainStep(step - 1, 'done');
-                // Mark current active
-                updateBrainStep(step, 'active');
-
-                step++;
-            }, 4000); // OPTIONAL: Reduced to 4s to make it feel snappier
-        }
-
-        function renderAll() {
-            const showDiff = document.getElementById('diffToggle').checked && state.hasRefined;
-            const platform = document.querySelector('input[name="platform"]:checked').value;
-
-            if (showDiff && state.historyIndex > 0) {
-                const previousState = state.history[state.historyIndex - 1];
-                document.getElementById('hookOutput').innerHTML = diffText(previousState.hook, state.currentHook);
-                document.getElementById('ctaOutput').innerHTML = diffText(previousState.cta, state.currentCta);
-                renderTweets(state.currentTweets, platform, true); // Pass true for diff mode
-            } else {
-                document.getElementById('hookOutput').innerText = state.currentHook;
-
-                // TL;DR Logic Check
-                const tldrEl = document.getElementById('tldrOutput');
-                if (state.currentTldr) {
-                    tldrEl.innerText = state.currentTldr;
-                } else {
-                    tldrEl.innerHTML = "<em style='color:var(--diff-del)'>Not generated</em>";
-                }
-
-                document.getElementById('ctaOutput').innerText = state.currentCta;
-                renderTweets(state.currentTweets, platform, false);
+                // Refresh Pro quota badge after generation
+                if (isProMode) fetchProQuota();
             }
-        }
 
-        function renderTweets(tweets, platform, isDiff) {
-            const container = document.getElementById('tweetsOutput');
-            container.innerHTML = "";
+            function simulateProgress() {
+                if (progressInterval) clearInterval(progressInterval);
+                let step = 2;
+                // 2=Research, 3=Draft, 4=Polish, 5=Done
 
-            if (platform === 'LinkedIn') {
-                // LINKEDIN MODE: Single Box
-                let contentHTML = "";
-                const currentFullText = tweets.join('\n\n');
+                progressInterval = setInterval(() => {
+                    // CHANGED: step > 5 allows Step 5 to become active
+                    if (step > 5) {
+                        clearInterval(progressInterval);
+                        return;
+                    }
 
-                if (isDiff && state.historyIndex > 0) {
+                    // Mark prev done
+                    updateBrainStep(step - 1, 'done');
+                    // Mark current active
+                    updateBrainStep(step, 'active');
+
+                    step++;
+                }, 4000); // OPTIONAL: Reduced to 4s to make it feel snappier
+            }
+
+            function renderAll() {
+                const showDiff = document.getElementById('diffToggle').checked && state.hasRefined;
+                const platform = document.querySelector('input[name="platform"]:checked').value;
+
+                if (showDiff && state.historyIndex > 0) {
                     const previousState = state.history[state.historyIndex - 1];
-                    const oldFullText = previousState.tweets.join('\n\n');
-                    contentHTML = diffText(oldFullText, currentFullText);
+                    document.getElementById('hookOutput').innerHTML = diffText(previousState.hook, state.currentHook);
+                    document.getElementById('ctaOutput').innerHTML = diffText(previousState.cta, state.currentCta);
+                    renderTweets(state.currentTweets, platform, true); // Pass true for diff mode
                 } else {
-                    // Replace newlines with <br> for display if not editable, 
-                    // but we use contenteditable, so textContent/innerText usually handles newlines.
-                    // However, for HTML rendering, we might need to be careful.
-                    // Best to just set innerText or use pre-wrap if we insert as text.
-                    // But diff returns HTML <ins>/<del>.
-                    // Let's stick to using the newlines in the string, and CSS white-space: pre-wrap.
-                    contentHTML = currentFullText.replace(/\n/g, '<br>');
-                }
+                    document.getElementById('hookOutput').innerText = state.currentHook;
 
-                const div = document.createElement('div');
-                div.className = 'tweet-box';
-                div.innerHTML = `
+                    // TL;DR Logic Check
+                    const tldrEl = document.getElementById('tldrOutput');
+                    if (state.currentTldr) {
+                        tldrEl.innerText = state.currentTldr;
+                    } else {
+                        tldrEl.innerHTML = "<em style='color:var(--diff-del)'>Not generated</em>";
+                    }
+
+                    document.getElementById('ctaOutput').innerText = state.currentCta;
+                    renderTweets(state.currentTweets, platform, false);
+                }
+            }
+
+            function renderTweets(tweets, platform, isDiff) {
+                const container = document.getElementById('tweetsOutput');
+                container.innerHTML = "";
+
+                if (platform === 'LinkedIn') {
+                    // LINKEDIN MODE: Single Box
+                    let contentHTML = "";
+                    const currentFullText = tweets.join('\n\n');
+
+                    if (isDiff && state.historyIndex > 0) {
+                        const previousState = state.history[state.historyIndex - 1];
+                        const oldFullText = previousState.tweets.join('\n\n');
+                        contentHTML = diffText(oldFullText, currentFullText);
+                    } else {
+                        // Replace newlines with <br> for display if not editable, 
+                        // but we use contenteditable, so textContent/innerText usually handles newlines.
+                        // However, for HTML rendering, we might need to be careful.
+                        // Best to just set innerText or use pre-wrap if we insert as text.
+                        // But diff returns HTML <ins>/<del>.
+                        // Let's stick to using the newlines in the string, and CSS white-space: pre-wrap.
+                        contentHTML = currentFullText.replace(/\n/g, '<br>');
+                    }
+
+                    const div = document.createElement('div');
+                    div.className = 'tweet-box';
+                    div.innerHTML = `
                     <div class="tweet-actions">
                         <span class="tweet-index">LINKEDIN POST</span>
                         <button class="btn-icon" onclick="copyText('linkedin-content')" title="Copy">📋</button>
                     </div>
                     <div contenteditable="true" id="linkedin-content" class="tweet-content" style="white-space: pre-wrap;">${contentHTML}</div>
                 `;
-                container.appendChild(div);
+                    container.appendChild(div);
 
-            } else {
-                // TWITTER MODE: Multiple Boxes
-                tweets.forEach((tweet, index) => {
-                    let contentHTML = tweet;
+                } else {
+                    // TWITTER MODE: Multiple Boxes
+                    tweets.forEach((tweet, index) => {
+                        let contentHTML = tweet;
 
-                    if (isDiff && state.historyIndex > 0) {
-                        const previousState = state.history[state.historyIndex - 1];
-                        const oldT = previousState.tweets[index] || "";
-                        contentHTML = diffText(oldT, tweet);
-                    }
+                        if (isDiff && state.historyIndex > 0) {
+                            const previousState = state.history[state.historyIndex - 1];
+                            const oldT = previousState.tweets[index] || "";
+                            contentHTML = diffText(oldT, tweet);
+                        }
 
-                    const div = document.createElement('div');
-                    div.className = 'tweet-box';
-                    div.innerHTML = `
+                        const div = document.createElement('div');
+                        div.className = 'tweet-box';
+                        div.innerHTML = `
                         <div class="tweet-actions">
                             <span class="tweet-index">${index + 1}</span>
                             <button class="btn-icon" onclick="copyText('tweet-content-${index}')" title="Copy">📋</button>
                         </div>
                         <div contenteditable="true" id="tweet-content-${index}" class="tweet-content">${contentHTML}</div>
                     `;
-                    container.appendChild(div);
-                });
+                        container.appendChild(div);
+                    });
+                }
             }
-        }
 
-        // --- 5. REFINE & DIFF LOGIC ---
-        function undoRefinement() {
-            if (state.historyIndex > 0) {
-                state.historyIndex--;
-                const prevState = state.history[state.historyIndex];
+            // --- 5. REFINE & DIFF LOGIC ---
+            function undoRefinement() {
+                if (state.historyIndex > 0) {
+                    state.historyIndex--;
+                    const prevState = state.history[state.historyIndex];
 
-                state.currentHook = prevState.hook;
-                state.currentTweets = [...prevState.tweets];
-                state.currentCta = prevState.cta;
+                    state.currentHook = prevState.hook;
+                    state.currentTweets = [...prevState.tweets];
+                    state.currentCta = prevState.cta;
 
-                // If the state we are reverting TO was a refinement, enable diff view
-                state.hasRefined = prevState.isRefinement;
-                document.getElementById('diffToggle').checked = state.hasRefined;
+                    // If the state we are reverting TO was a refinement, enable diff view
+                    state.hasRefined = prevState.isRefinement;
+                    document.getElementById('diffToggle').checked = state.hasRefined;
 
-                __updateUndoRedoButtons();
+                    __updateUndoRedoButtons();
+                    renderAll();
+                }
+            }
+
+            function redoRefinement() {
+                if (state.historyIndex < state.history.length - 1) {
+                    state.historyIndex++;
+                    const nextState = state.history[state.historyIndex];
+
+                    state.currentHook = nextState.hook;
+                    state.currentTweets = [...nextState.tweets];
+                    state.currentCta = nextState.cta;
+
+                    state.hasRefined = nextState.isRefinement;
+                    document.getElementById('diffToggle').checked = state.hasRefined;
+
+                    __updateUndoRedoButtons();
+                    renderAll();
+                }
+            }
+
+            // Helper: Extract clean text (strips diff artifacts if in diff mode)
+            function getCleanText(elementId) {
+                const el = document.getElementById(elementId);
+                if (!el) return "";
+
+                // If diff mode is active, we need to extract only the "new" text
+                if (document.getElementById('diffToggle').checked) {
+                    const clone = el.cloneNode(true);
+                    // Remove all <del> tags (old text)
+                    clone.querySelectorAll('del').forEach(d => d.remove());
+                    // Extract text from remaining content (includes <ins> and plain text)
+                    const insElements = clone.querySelectorAll('ins');
+                    insElements.forEach(ins => {
+                        ins.replaceWith(ins.textContent);
+                    });
+                    return clone.innerText;
+                }
+                return el.innerText;
+            }
+
+            async function refineFullPost() {
+                const prompt = document.getElementById('refinePrompt').value;
+                if (!prompt) return;
+
+                // Detect platform
+                const platform = document.querySelector('input[name="platform"]:checked').value;
+
+                // 1. Capture Current Manual Edits BEFORE refining
+                // This ensures manual user edits are saved to the history stack 
+                // *before* the new AI refinement creates a new state.
+                let preRefineHook = getCleanText('hookOutput');
+                let preRefineCta = getCleanText('ctaOutput');
+                let preRefineTweets = [];
+
+                if (platform === 'LinkedIn') {
+                    const linkedinContent = getCleanText('linkedin-content');
+                    preRefineTweets = linkedinContent ? [linkedinContent] : [];
+                } else {
+                    const tweetElements = document.querySelectorAll('[id^="tweet-content-"]');
+                    preRefineTweets = Array.from(tweetElements).map(el => getCleanText(el.id));
+                }
+
+                // Save the exact user-modified state IF it drifted from our current tracked state
+                // (A shallow comparison or just an unconditional save will work. Unconditional is safer).
+                __saveToHistory(preRefineHook, preRefineTweets, preRefineCta, false);
+
+                // Collect context
+                const topic = document.getElementById('topicInput').value;
+                const profileKey = document.getElementById('profileSelect').value;
+                const profileData = state.profiles[profileKey] || {};
+
+                const btn = document.querySelector('#refinePrompt + button');
+                const originalText = btn.innerText;
+                btn.innerText = "Refining...";
+                btn.disabled = true;
+
+                try {
+                    const response = await fetch(`${API_URL}/refine-full`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            hook: preRefineHook,
+                            tweets: preRefineTweets,
+                            cta: preRefineCta,
+                            prompt: prompt,
+                            platform: platform,
+                            topic: topic,
+                            audience: profileData.audience || "",
+                            tone: profileData.tone || "",
+                            voice_analysis: profileData.style_analysis || ""
+                        })
+                    });
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error);
+
+                    // 2. Update New State
+                    state.currentHook = data.refined_hook;
+                    state.currentTweets = data.refined_tweets;
+                    state.currentCta = data.refined_cta;
+
+                    state.hasRefined = true; // Enable diff view
+
+                    // Auto-enable diff view for clarity
+                    document.getElementById('diffToggle').checked = true;
+
+                    // Push to History
+                    __saveToHistory(state.currentHook, state.currentTweets, state.currentCta, true);
+
+                    renderAll();
+
+                } catch (e) {
+                    alert(e.message);
+                } finally {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                }
+            }
+
+            function diffText(text1, text2) {
+                const dmp = new diff_match_patch();
+                const diffs = dmp.diff_main(text1, text2);
+                dmp.diff_cleanupSemantic(diffs);
+                let html = "";
+                diffs.forEach(part => {
+                    const [type, text] = part;
+                    if (type === 0) html += text;
+                    if (type === 1) html += `<ins>${text}</ins>`;
+                    if (type === -1) html += `<del>${text}</del>`;
+                });
+                return html;
+            }
+
+            function toggleDiffView() {
                 renderAll();
             }
-        }
 
-        function redoRefinement() {
-            if (state.historyIndex < state.history.length - 1) {
-                state.historyIndex++;
-                const nextState = state.history[state.historyIndex];
-
-                state.currentHook = nextState.hook;
-                state.currentTweets = [...nextState.tweets];
-                state.currentCta = nextState.cta;
-
-                state.hasRefined = nextState.isRefinement;
-                document.getElementById('diffToggle').checked = state.hasRefined;
-
-                __updateUndoRedoButtons();
-                renderAll();
-            }
-        }
-
-        // Helper: Extract clean text (strips diff artifacts if in diff mode)
-        function getCleanText(elementId) {
-            const el = document.getElementById(elementId);
-            if (!el) return "";
-
-            // If diff mode is active, we need to extract only the "new" text
-            if (document.getElementById('diffToggle').checked) {
-                const clone = el.cloneNode(true);
-                // Remove all <del> tags (old text)
-                clone.querySelectorAll('del').forEach(d => d.remove());
-                // Extract text from remaining content (includes <ins> and plain text)
-                const insElements = clone.querySelectorAll('ins');
-                insElements.forEach(ins => {
-                    ins.replaceWith(ins.textContent);
-                });
-                return clone.innerText;
-            }
-            return el.innerText;
-        }
-
-        async function refineFullPost() {
-            const prompt = document.getElementById('refinePrompt').value;
-            if (!prompt) return;
-
-            // Detect platform
-            const platform = document.querySelector('input[name="platform"]:checked').value;
-
-            // 1. Capture Current Manual Edits BEFORE refining
-            // This ensures manual user edits are saved to the history stack 
-            // *before* the new AI refinement creates a new state.
-            let preRefineHook = getCleanText('hookOutput');
-            let preRefineCta = getCleanText('ctaOutput');
-            let preRefineTweets = [];
-
-            if (platform === 'LinkedIn') {
-                const linkedinContent = getCleanText('linkedin-content');
-                preRefineTweets = linkedinContent ? [linkedinContent] : [];
-            } else {
-                const tweetElements = document.querySelectorAll('[id^="tweet-content-"]');
-                preRefineTweets = Array.from(tweetElements).map(el => getCleanText(el.id));
+            // --- 5. CLIPBOARD LOGIC ---
+            function copyText(elementId) {
+                const text = document.getElementById(elementId).innerText;
+                navigator.clipboard.writeText(text);
+                // Simple visual feedback
+                const btn = document.querySelector(`button[onclick="copyText('${elementId}')"]`);
+                const old = btn.innerHTML;
+                btn.innerHTML = '✅';
+                setTimeout(() => btn.innerHTML = old, 1000);
             }
 
-            // Save the exact user-modified state IF it drifted from our current tracked state
-            // (A shallow comparison or just an unconditional save will work. Unconditional is safer).
-            __saveToHistory(preRefineHook, preRefineTweets, preRefineCta, false);
+            function copyAll() {
+                const hook = state.currentHook;
+                const cta = state.currentCta;
+                const tweets = state.currentTweets.join('\n\n');
+                const full = `${hook}\n\n${tweets}\n\n${cta}`;
+                navigator.clipboard.writeText(full);
+                navigator.clipboard.writeText(full);
+                showToast("Copied to clipboard!", "success");
 
-            // Collect context
-            const topic = document.getElementById('topicInput').value;
-            const profileKey = document.getElementById('profileSelect').value;
-            const profileData = state.profiles[profileKey] || {};
-
-            const btn = document.querySelector('#refinePrompt + button');
-            const originalText = btn.innerText;
-            btn.innerText = "Refining...";
-            btn.disabled = true;
-
-            try {
-                const response = await fetch(`${API_URL}/refine-full`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        hook: preRefineHook,
-                        tweets: preRefineTweets,
-                        cta: preRefineCta,
-                        prompt: prompt,
-                        platform: platform,
-                        topic: topic,
-                        audience: profileData.audience || "",
-                        tone: profileData.tone || "",
-                        voice_analysis: profileData.style_analysis || ""
-                    })
-                });
-                const data = await response.json();
-                if (data.error) throw new Error(data.error);
-
-                // 2. Update New State
-                state.currentHook = data.refined_hook;
-                state.currentTweets = data.refined_tweets;
-                state.currentCta = data.refined_cta;
-
-                state.hasRefined = true; // Enable diff view
-
-                // Auto-enable diff view for clarity
-                document.getElementById('diffToggle').checked = true;
-
-                // Push to History
-                __saveToHistory(state.currentHook, state.currentTweets, state.currentCta, true);
-
-                renderAll();
-
-            } catch (e) {
-                alert(e.message);
-            } finally {
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }
-        }
-
-        function diffText(text1, text2) {
-            const dmp = new diff_match_patch();
-            const diffs = dmp.diff_main(text1, text2);
-            dmp.diff_cleanupSemantic(diffs);
-            let html = "";
-            diffs.forEach(part => {
-                const [type, text] = part;
-                if (type === 0) html += text;
-                if (type === 1) html += `<ins>${text}</ins>`;
-                if (type === -1) html += `<del>${text}</del>`;
-            });
-            return html;
-        }
-
-        function toggleDiffView() {
-            renderAll();
-        }
-
-        // --- 5. CLIPBOARD LOGIC ---
-        function copyText(elementId) {
-            const text = document.getElementById(elementId).innerText;
-            navigator.clipboard.writeText(text);
-            // Simple visual feedback
-            const btn = document.querySelector(`button[onclick="copyText('${elementId}')"]`);
-            const old = btn.innerHTML;
-            btn.innerHTML = '✅';
-            setTimeout(() => btn.innerHTML = old, 1000);
-        }
-
-        function copyAll() {
-            const hook = state.currentHook;
-            const cta = state.currentCta;
-            const tweets = state.currentTweets.join('\n\n');
-            const full = `${hook}\n\n${tweets}\n\n${cta}`;
-            navigator.clipboard.writeText(full);
-            navigator.clipboard.writeText(full);
-            showToast("Copied to clipboard!", "success");
-
-            // [NEW] Log as Manual Save
-            logManualEdit("MANUAL_SAVE");
-        }
-
-
-        // [NEW] Manual Logging for Gold Standard Data
-        let lastLoggedContentHash = ""; // Prevent DB bloat
-
-        async function logManualEdit(actionType) {
-            if (!state.currentInteractionId) return; // Nothing to link to
-
-            const content = {
-                hook: state.currentHook,
-                tweets: state.currentTweets,
-                cta: state.currentCta
-            };
-
-            // Simple hash/string to check if we already logged this exact content
-            const currentHash = JSON.stringify(content);
-            if (currentHash === lastLoggedContentHash) {
-                console.log("Skipping log: Content identical to last save.");
-                return;
+                // [NEW] Log as Manual Save
+                logManualEdit("MANUAL_SAVE");
             }
 
-            const meta = {
-                "source": "manual_action",
-                "client_timestamp": new Date().toISOString()
-            };
 
-            try {
-                // Fire and forget (don't await)
-                fetch(`${API_URL}/log-interaction`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        interaction_id: null, // Let backend gen new one for this event
-                        parent_id: state.currentInteractionId, // Link to original
-                        action_type: actionType,
-                        content: content,
-                        meta: meta
-                    })
-                });
-                console.log("Logged manual interaction:", actionType);
-                lastLoggedContentHash = currentHash; // Update tracker
-            } catch (e) {
-                console.warn("Failed to log interaction", e);
+            // [NEW] Manual Logging for Gold Standard Data
+            let lastLoggedContentHash = ""; // Prevent DB bloat
+
+            async function logManualEdit(actionType) {
+                if (!state.currentInteractionId) return; // Nothing to link to
+
+                const content = {
+                    hook: state.currentHook,
+                    tweets: state.currentTweets,
+                    cta: state.currentCta
+                };
+
+                // Simple hash/string to check if we already logged this exact content
+                const currentHash = JSON.stringify(content);
+                if (currentHash === lastLoggedContentHash) {
+                    console.log("Skipping log: Content identical to last save.");
+                    return;
+                }
+
+                const meta = {
+                    "source": "manual_action",
+                    "client_timestamp": new Date().toISOString()
+                };
+
+                try {
+                    // Fire and forget (don't await)
+                    fetch(`${API_URL}/log-interaction`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            interaction_id: null, // Let backend gen new one for this event
+                            parent_id: state.currentInteractionId, // Link to original
+                            action_type: actionType,
+                            content: content,
+                            meta: meta
+                        })
+                    });
+                    console.log("Logged manual interaction:", actionType);
+                    lastLoggedContentHash = currentHash; // Update tracker
+                } catch (e) {
+                    console.warn("Failed to log interaction", e);
+                }
             }
-        }
 
-        // --- 6. TOAST LOGIC ---
-        function showToast(message, type = "info") {
-            const container = document.getElementById('toastContainer');
+            // --- 6. TOAST LOGIC ---
+            function showToast(message, type = "info") {
+                const container = document.getElementById('toastContainer');
 
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
 
-            let icon = "ℹ️";
-            if (type === 'error') icon = "⛔";
-            if (type === 'success') icon = "✅";
+                let icon = "ℹ️";
+                if (type === 'error') icon = "⛔";
+                if (type === 'success') icon = "✅";
 
-            toast.innerHTML = `
+                toast.innerHTML = `
                 <span class="toast-icon">${icon}</span>
                 <span>${message}</span>
             `;
 
-            container.appendChild(toast);
+                container.appendChild(toast);
 
-            // Trigger Animation
-            setTimeout(() => toast.classList.add('show'), 10);
+                // Trigger Animation
+                setTimeout(() => toast.classList.add('show'), 10);
 
-            // Auto Remove
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
-        }
+                // Auto Remove
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 300);
+                }, 4000);
+            }
 
-        async function learnStyle() {
-            const pKey = document.getElementById('profileSelect').value;
-            if (!pKey) return showToast("No profile selected!", "error");
+            async function learnStyle() {
+                const pKey = document.getElementById('profileSelect').value;
+                if (!pKey) return showToast("No profile selected!", "error");
 
-            const fullText = `${state.currentHook}\n\n${state.currentTweets.join('\n\n')}\n\n${state.currentCta}`;
-            const currentTone = state.profiles[pKey]?.tone || "";
+                const fullText = `${state.currentHook}\n\n${state.currentTweets.join('\n\n')}\n\n${state.currentCta}`;
+                const currentTone = state.profiles[pKey]?.tone || "";
 
-            const btn = document.querySelector('button[onclick="learnStyle()"]');
-            const oldText = btn.innerText;
-            btn.innerText = "Analyzing...";
-            btn.disabled = true;
+                const btn = document.querySelector('button[onclick="learnStyle()"]');
+                const oldText = btn.innerText;
+                btn.innerText = "Analyzing...";
+                btn.disabled = true;
 
-            try {
-                const res = await fetch(`${API_URL}/analyze-style`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content: fullText, current_style: currentTone })
-                });
-                const data = await res.json();
+                try {
+                    const res = await fetch(`${API_URL}/analyze-style`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ content: fullText, current_style: currentTone })
+                    });
+                    const data = await res.json();
 
-                // Update State
-                if (data.style_summary) {
-                    state.profiles[pKey].style_analysis = data.style_summary; // Correct field
+                    // Update State
+                    if (data.style_summary) {
+                        state.profiles[pKey].style_analysis = data.style_summary; // Correct field
 
-                    // Save to LocalStorage
-                    const storageData = { default_profile: pKey, profiles: state.profiles };
-                    localStorage.setItem("user_profiles", JSON.stringify(storageData));
+                        // Save to LocalStorage
+                        const storageData = { default_profile: pKey, profiles: state.profiles };
+                        localStorage.setItem("user_profiles", JSON.stringify(storageData));
 
-                    showToast("Style Analyzed! Opening editor...", "success");
-                    openProfileEditor(); // Open modal to show the user
+                        showToast("Style Analyzed! Opening editor...", "success");
+                        openProfileEditor(); // Open modal to show the user
+                    }
+
+                } catch (e) {
+                    showToast("Style Learning Failed: " + e.message, "error");
+                } finally {
+                    btn.innerText = oldText;
+                    btn.disabled = false;
+                }
+            }
+            // ── MODEL SELECTOR HANDLER ──────────────────────────────────────
+            function handleModelChange(sel) {
+                const btn = document.getElementById('generateBtn');
+                const isProMode = document.getElementById('proModeToggle')?.checked || false;
+
+                // Remove specific model classes to standardize appearance
+                btn.classList.remove('btn-nim', 'btn-pro');
+
+                if (sel.value === 'gemini') {
+                    if (isProMode) {
+                        btn.classList.add('btn-pro');
+                        document.getElementById('genBtnText').innerText = 'Deep Forge';
+                    } else {
+                        document.getElementById('genBtnText').innerText = 'Forge Content';
+                    }
+                    document.getElementById('genBtnIcon').innerText = '🪶';
+                } else {
+                    if (isProMode) {
+                        btn.classList.add('btn-pro');
+                        document.getElementById('genBtnText').innerText = 'Deep Forge';
+                    } else {
+                        document.getElementById('genBtnText').innerText = 'Forge Content'; // Standardized text
+                    }
+                    document.getElementById('genBtnIcon').innerText = '⚡';
+                }
+            }
+
+            // ── PRO MODE TOGGLE HANDLER ──────────────────────────────────────
+            function handleProToggle(toggle) {
+                const sel = document.getElementById('modelSelect');
+                handleModelChange(sel); // Update button text
+                if (toggle.checked) {
+                    fetchProQuota();
+                }
+            }
+
+            // ── PRO QUOTA FETCHER ──────────────────────────────────────────
+            async function fetchProQuota() {
+                try {
+                    const res = await fetch(`${API_URL}/pro-quota`);
+                    const data = await res.json();
+                    updateProQuotaBadge(data.remaining, data.limit);
+                } catch (e) {
+                    console.error('Failed to fetch Pro quota:', e);
+                }
+            }
+
+            function updateProQuotaBadge(remaining, limit) {
+                const badge = document.getElementById('proQuotaBadge');
+                if (!badge) return;
+                badge.innerText = `⚡ ${remaining} left today`;
+                if (remaining <= 1) {
+                    badge.classList.add('low');
+                } else {
+                    badge.classList.remove('low');
+                }
+            }
+
+            // Fetch Pro quota on page load
+            fetchProQuota();
+
+            // ── NIM CLARIFICATION LOOP (same UX as Gemini clarification) ──────
+            async function runNimClarificationLoop(topic) {
+                updateBrainStep(1, 'active');
+                simulateProgress();
+
+                try {
+                    const pKey = document.getElementById('profileSelect').value;
+                    const pData = state.profiles[pKey] || {};
+
+                    const proMode = document.getElementById('proModeToggle')?.checked || false;
+                    const payload = {
+                        topic: topic,
+                        model: state.nimModel,
+                        template: document.getElementById('templateSelect').value,
+                        platform: document.querySelector('input[name="platform"]:checked').value,
+                        audience: pData.audience || "",
+                        tone: pData.tone || "",
+                        forbidden_words: pData.forbidden_words || [],
+                        style_analysis: pData.style_analysis || "",
+                        clarification_history: state.clarificationHistory,
+                        pro_mode: proMode
+                    };
+
+                    const res = await fetch(`${API_URL}/generate-thread-nim`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    // NIM returns JSON for clarification/errors, SSE for generation
+                    const contentType = res.headers.get('content-type') || '';
+
+                    if (contentType.includes('text/event-stream')) {
+                        // Generation is streaming — hand off to stream reader
+                        if (!proMode) {
+                            clearInterval(progressInterval);
+                            for (let i = 1; i <= 5; i++) updateBrainStep(i, 'done');
+                            await new Promise(r => setTimeout(r, 400));
+                            document.getElementById('workingSection').classList.add('hidden');
+                        }
+                        // In Pro mode, brain steps stay visible — readNimStream controls them
+
+                        const output = document.getElementById('outputSection');
+                        output.classList.remove('hidden');
+
+                        // Show NIM section, hide Gemini section
+                        document.getElementById('nimOutputSection').classList.remove('hidden');
+                        document.getElementById('geminiOutputSection').style.display = 'none';
+                        document.getElementById('nimModelLabel').innerText = state.nimModel + (proMode ? ' · PRO' : '');
+
+                        const streamDiv = document.getElementById('nim-stream-output');
+                        streamDiv.innerHTML = proMode ? '' : '<span class="nim-stream-cursor"></span>';
+
+                        await readNimStream(res, streamDiv, proMode);
+                    } else {
+                        // JSON response: could be CLARIFICATION_NEEDED or error
+                        const data = await res.json();
+
+                        if (data.status === 'CLARIFICATION_NEEDED') {
+                            const clarSection = document.getElementById('clarificationSection');
+                            if (clarSection) clarSection.classList.remove('hidden');
+                            renderNimClarificationQuestion(data.question, data.type, data.options, topic);
+                        } else if (data.error) {
+                            throw new Error(data.error);
+                        }
+                    }
+
+                } catch (e) {
+                    showToast('Error: ' + e.message, 'error');
+                    document.getElementById('setupSection').classList.remove('hidden');
+                    document.getElementById('workingSection').classList.add('hidden');
+                    const btn = document.getElementById('generateBtn');
+                    if (btn) btn.disabled = false;
+                    const btnText = document.getElementById('genBtnText');
+                    if (btnText) btnText.innerText = 'Forge with NIM';
+                }
+            }
+
+            function renderNimClarificationQuestion(question, type, options, topic) {
+                // Reuse the same clarification rendering, but loop back to NIM
+                const container = document.getElementById('clarificationContainer');
+                const botMsg = document.createElement('div');
+                botMsg.className = 'chat-msg bot';
+                botMsg.innerText = question;
+                container.appendChild(botMsg);
+
+                const inputDiv = document.createElement('div');
+                inputDiv.className = 'chat-input-area';
+
+                if (type === 'mcq' && options && options.length > 0) {
+                    options.forEach(opt => {
+                        const btn = document.createElement('button');
+                        btn.className = 'btn-secondary btn-sm';
+                        btn.innerText = opt;
+                        btn.style.marginRight = '5px';
+                        btn.style.marginBottom = '5px';
+                        btn.onclick = () => submitNimAnswer(question, opt, topic);
+                        inputDiv.appendChild(btn);
+                    });
+                } else {
+                    const txt = document.createElement('input');
+                    txt.type = 'text';
+                    txt.className = 'form-input';
+                    txt.placeholder = 'Type your answer...';
+                    txt.onkeypress = (e) => { if (e.key === 'Enter') submitNimAnswer(question, txt.value, topic); };
+                    inputDiv.appendChild(txt);
+
+                    const sendBtn = document.createElement('button');
+                    sendBtn.className = 'btn btn-sm';
+                    sendBtn.innerText = 'Send';
+                    sendBtn.onclick = () => submitNimAnswer(question, txt.value, topic);
+                    inputDiv.appendChild(sendBtn);
                 }
 
-            } catch (e) {
-                showToast("Style Learning Failed: " + e.message, "error");
-            } finally {
-                btn.innerText = oldText;
-                btn.disabled = false;
+                container.appendChild(inputDiv);
+                container.scrollTop = container.scrollHeight;
             }
-        }
-    </script>
+
+            async function submitNimAnswer(question, answer, topic) {
+                if (!answer.trim()) return;
+                const container = document.getElementById('clarificationContainer');
+                const inputArea = container.querySelector('.chat-input-area');
+                if (inputArea) inputArea.remove();
+
+                const userMsg = document.createElement('div');
+                userMsg.className = 'chat-msg user';
+                userMsg.innerText = answer;
+                container.appendChild(userMsg);
+
+                state.clarificationHistory.push({ role: 'assistant', content: question });
+                state.clarificationHistory.push({ role: 'user', content: answer });
+
+                document.getElementById('clarificationSection').classList.add('hidden');
+                document.getElementById('workingSection').classList.remove('hidden');
+
+                await runNimClarificationLoop(topic);
+            }
+
+            // ── NIM SSE STREAM READER ────────────────────────────────────────
+            async function readNimStream(response, streamDiv, isProMode = false) {
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let fullText = '';
+                let interactionId = null;
+                let streamStarted = false;
+
+                // Remove the blinking cursor placeholder first
+                if (!isProMode) streamDiv.innerHTML = '';
+
+                try {
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop(); // Keep incomplete line in buffer
+
+                        for (const line of lines) {
+                            if (!line.startsWith('data: ')) continue;
+                            const raw = line.slice(6).trim();
+                            if (!raw) continue;
+
+                            try {
+                                const event = JSON.parse(raw);
+
+                                if (event.error) {
+                                    streamDiv.innerHTML = '';
+                                    const btn = document.getElementById('generateBtn');
+                                    if (btn) btn.disabled = false;
+                                    const btnText = document.getElementById('genBtnText');
+                                    if (btnText) btnText.innerText = 'Forge with NIM';
+                                    document.getElementById('workingSection').classList.add('hidden');
+                                    showToast('NIM Error: ' + event.error, 'error');
+                                    return;
+                                }
+
+                                // PRO MODE: Real brain step events
+                                if (event.type === 'step' && isProMode) {
+                                    const stepNum = event.step;
+                                    const label = event.label;
+                                    // Mark previous steps as done
+                                    for (let i = 1; i < stepNum; i++) updateBrainStep(i, 'done');
+                                    updateBrainStep(stepNum, 'active');
+                                    // Show stream div when step 5 (Editor) starts streaming
+                                    if (stepNum === 5) {
+                                        streamDiv.innerHTML = '<span class="nim-stream-cursor"></span>';
+                                        streamStarted = true;
+                                    }
+                                }
+
+                                if (event.type === 'chunk') {
+                                    fullText += event.content;
+                                    streamDiv.innerHTML = escapeHtml(fullText) + '<span class="nim-stream-cursor"></span>';
+                                    streamDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                                }
+
+                                if (event.type === 'done') {
+                                    fullText = event.full_text || fullText;
+                                    interactionId = event.interaction_id;
+                                    streamDiv.innerHTML = escapeHtml(fullText);
+                                    // Mark all steps done
+                                    if (isProMode) {
+                                        for (let i = 1; i <= 5; i++) updateBrainStep(i, 'done');
+                                        await new Promise(r => setTimeout(r, 400));
+                                        document.getElementById('workingSection').classList.add('hidden');
+                                    }
+                                }
+                            } catch (_) { /* skip malformed chunks */ }
+                        }
+                    }
+                } finally {
+                    reader.releaseLock();
+                }
+
+                // Parse and render into state
+                const parsed = parseNimOutput(fullText);
+                handleNimCompletion(parsed, interactionId, fullText);
+
+                // Update Pro quota after generation
+                if (isProMode) fetchProQuota();
+            }
+
+            function escapeHtml(str) {
+                return str
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+            }
+
+            // -- NIM OUTPUT PARSER --------------------------------------------------
+            function parseNimOutput(rawText) {
+                // Strip leading <think>...</think> blocks from reasoning models
+                rawText = rawText.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
+
+                const lines = rawText.split('\n');
+                let hook = '';
+                let cta = '';
+                let tldr = '';
+                let section = null;
+
+                // Group lines into tweet blocks by numbered prefix
+                let tweetBlocks = [];
+                let currentTweetLines = null;
+
+                for (const line of lines) {
+                    const trimmed = line.trim();
+
+                    if (/^HOOK:\s*/i.test(trimmed)) {
+                        hook = trimmed.replace(/^HOOK:\s*/i, '').trim();
+                        section = 'hook';
+                    } else if (/^(TWEETS|BODY):\s*$/i.test(trimmed)) {
+                        section = 'tweets';
+                        currentTweetLines = null;
+                    } else if (/^CTA:\s*/i.test(trimmed)) {
+                        if (currentTweetLines) { tweetBlocks.push(currentTweetLines); currentTweetLines = null; }
+                        cta = trimmed.replace(/^CTA:\s*/i, '').trim();
+                        section = 'cta';
+                    } else if (/^TLDR:\s*/i.test(trimmed)) {
+                        tldr = trimmed.replace(/^TLDR:\s*/i, '').trim();
+                        section = 'tldr';
+                    } else if (section === 'tweets') {
+                        // New numbered tweet: '1.' '1)' '1/' etc.
+                        const isNewTweet = /^\d+[.)\/]\s*/.test(trimmed);
+                        if (isNewTweet) {
+                            if (currentTweetLines) tweetBlocks.push(currentTweetLines);
+                            const content = trimmed.replace(/^\d+[.)\/]\s*/, '').trim();
+                            currentTweetLines = { lines: content ? [content] : [] };
+                        } else if (trimmed && currentTweetLines) {
+                            currentTweetLines.lines.push(trimmed);
+                        } else if (trimmed && !currentTweetLines) {
+                            currentTweetLines = { lines: [trimmed] };
+                        }
+                    } else if (section === 'cta' && trimmed && !cta) {
+                        cta = trimmed;
+                    } else if (section === 'tldr' && trimmed && !tldr) {
+                        tldr = trimmed;
+                    } else if (section === 'hook' && trimmed && !hook) {
+                        hook = trimmed;
+                    }
+                }
+
+                if (currentTweetLines) tweetBlocks.push(currentTweetLines);
+
+                // Join each block's lines with newlines to form one tweet string
+                let tweets = tweetBlocks.map(b => b.lines.join('\n')).filter(t => t.trim());
+
+                // Fallback: no structured output
+                if (!hook && !tweets.length) {
+                    const parts = rawText.split('\n\n').filter(p => p.trim());
+                    hook  = parts[0] || rawText.slice(0, 100);
+                    tweets = parts.slice(1, -1);
+                    cta   = parts[parts.length - 1] || '';
+                }
+
+                return { hook, tweets, cta, tldr };
+            }
+
+            // ── NIM COMPLETION HANDLER ───────────────────────────────────────
+            function handleNimCompletion(parsed, interactionId, rawText) {
+                const { hook, tweets, cta, tldr } = parsed;
+
+                // 1. Feed into the same state as Gemini (enables refine, undo, copy-all)
+                state.currentHook = hook;
+                state.currentTweets = tweets;
+                state.currentCta = cta;
+                state.currentTldr = tldr;
+                state.currentInteractionId = interactionId;
+
+                state.history = [];
+                state.historyIndex = -1;
+                __saveToHistory(hook, tweets, cta, false);
+                state.hasRefined = false;
+
+                // 2. Hide NIM stream cleanly
+                const streamDiv = document.getElementById('nim-stream-output');
+                if (streamDiv) {
+                    streamDiv.style.maxHeight = '0';
+                    streamDiv.style.overflow = 'hidden';
+                    streamDiv.style.padding = '0';
+                    streamDiv.style.border = 'none';
+                    streamDiv.innerHTML = ''; // Ensure content doesn't bleed out
+                }
+
+                // 3. Also hide the NIM section banner
+                document.getElementById('nimOutputSection').classList.add('hidden');
+
+                // 4. Render parsed content in the familiar hook/tweets/CTA boxes
+                document.getElementById('geminiOutputSection').style.display = 'block';
+                document.getElementById('templateOutput').innerText =
+                    document.getElementById('templateSelect').value + ' · ⚡ NIM';
+
+                renderAll(); // Populates hookOutput, tweetsOutput, ctaOutput, tldrOutput
+
+                // 5. Re-enable generate button
+                const btn = document.getElementById('generateBtn');
+                if (btn) btn.disabled = false;
+                const btnText = document.getElementById('genBtnText');
+                const isProMode = document.getElementById('proModeToggle')?.checked || false;
+                if (btnText) {
+                    btnText.innerText = isProMode ? 'Deep Forge' : 'Forge Content';
+                }
+
+                showToast('⚡ NIM generation complete!', 'success');
+            }
+        </script>
 </body>
 
 </html>

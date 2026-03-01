@@ -117,3 +117,81 @@ class MetricsTracker:
             return True
         except Exception:
             return True
+
+    # --- PRO MODE QUOTA ---
+    @classmethod
+    async def check_pro_limit(cls, ip: str) -> bool:
+        """Read-only check for Pro quota. Returns False if exceeded."""
+        if ip == "unknown" or not cls._supabase:
+            return True
+        today = datetime.now().strftime("%Y-%m-%d")
+        try:
+            res = cls._supabase.table("ip_rate_limits")\
+                .select("pro_count")\
+                .eq("ip_address", ip)\
+                .eq("limit_date", today)\
+                .execute()
+            if res.data and len(res.data) > 0:
+                pro_count = res.data[0].get('pro_count', 0) or 0
+                if pro_count >= settings.pro_daily_limit:
+                    return False
+            return True
+        except Exception:
+            return True
+
+    @classmethod
+    async def try_increment_pro(cls, ip: str) -> bool:
+        """Atomic check and increment for Pro quota. Returns True if allowed."""
+        if ip == "unknown" or not cls._supabase:
+            return True
+        today = datetime.now().strftime("%Y-%m-%d")
+        try:
+            res = cls._supabase.table("ip_rate_limits")\
+                .select("post_count, pro_count")\
+                .eq("ip_address", ip)\
+                .eq("limit_date", today)\
+                .execute()
+
+            current_post = 0
+            current_pro = 0
+            if res.data and len(res.data) > 0:
+                current_post = res.data[0].get('post_count', 0) or 0
+                current_pro = res.data[0].get('pro_count', 0) or 0
+
+            if current_pro >= settings.pro_daily_limit:
+                print(f"⛔ Pro Limit Hit for {ip}: {current_pro}/{settings.pro_daily_limit}")
+                return False
+
+            new_data = {
+                "ip_address": ip,
+                "limit_date": today,
+                "post_count": current_post + 1,  # Pro also counts as a post
+                "pro_count": current_pro + 1,
+                "last_active": datetime.now().isoformat()
+            }
+            cls._supabase.table("ip_rate_limits").upsert(new_data).execute()
+            print(f"✅ Pro Limit Update for {ip}: {current_pro + 1}/{settings.pro_daily_limit}")
+            return True
+        except Exception as e:
+            print(f"⚠️ Pro Limit DB Error: {e}")
+            return True  # Fail open
+
+    @classmethod
+    async def get_pro_remaining(cls, ip: str) -> int:
+        """Returns remaining Pro generations for the current IP today."""
+        if ip == "unknown" or not cls._supabase:
+            return settings.pro_daily_limit
+        today = datetime.now().strftime("%Y-%m-%d")
+        try:
+            res = cls._supabase.table("ip_rate_limits")\
+                .select("pro_count")\
+                .eq("ip_address", ip)\
+                .eq("limit_date", today)\
+                .execute()
+            if res.data and len(res.data) > 0:
+                used = res.data[0].get('pro_count', 0) or 0
+                return max(0, settings.pro_daily_limit - used)
+            return settings.pro_daily_limit
+        except Exception:
+            return settings.pro_daily_limit
+

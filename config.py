@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     # Rate Limiting
     daily_post_limit: int = 5
     free_tier_limit: int = 3
+    pro_daily_limit: int = 3  # Pro Mode generations per IP per day
     
     # Model Configuration
     gemini_max_tokens: int = 8000
