@@ -301,6 +301,31 @@ class RefineStyle(dspy.Signature):
     style_summary = dspy.OutputField(desc="A concise string (10-15 words) merging old and new traits. E.g. 'Punchy, usage of metaphors, authoritative, prefers short paragraphs'.")
 
 
+class GenerateSocialThread(dspy.Signature):
+    """Generate a compelling social media thread/post using the Micro-to-Macro Pivot technique.
+    
+    Great content starts with a highly specific, mundane, or vulnerable observation (the Micro)
+    and connects it to a profound, universal lesson (the Macro).
+    
+    VOICE RULES:
+    1. Broetry formatting: Short, punchy lines. Paragraphs NEVER exceed 2 sentences.
+    2. Humble, reflective tone — curious student sharing a realization, NOT a guru lecturing.
+    3. Plain 5th-grade English. Zero corporate jargon.
+    4. Start with a pattern-interrupt or vulnerable hook.
+    5. Pivot from a specific scene/story to the universal lesson.
+    6. End with a single punchy philosophical takeaway.
+    """
+    topic = dspy.InputField(desc="The topic to write about.")
+    audience = dspy.InputField(desc="Target audience for the content.")
+    platform = dspy.InputField(desc="'Twitter' or 'LinkedIn'.")
+    style_notes = dspy.InputField(desc="Additional voice/style context from user analysis.")
+    forbidden_words = dspy.InputField(desc="Words to never use.")
+
+    hook = dspy.OutputField(desc="1-2 sentence opening that challenges a belief or starts mid-story.")
+    body = dspy.OutputField(desc="The main content. Short paragraphs, broetry style. Micro story → Macro lesson.")
+    cta = dspy.OutputField(desc="A simple, non-salesy question or call to action.")
+
+
 # ==============================================================================
 # 3. PHASE-BASED OPTIMIZED SIGNATURES (5-Call Architecture)
 # ==============================================================================

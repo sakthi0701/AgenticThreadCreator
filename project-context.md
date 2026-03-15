@@ -9,12 +9,15 @@ The **Agentic Thread Creator** is an AI-powered system designed to generate, ref
 * **LLM Providers:** 
   * Google Gemini (via `MultiKeyGemini` wrapper) for primary generation.
   * Groq / Kimi (via `MultiKeyGroq` wrapper) for fast, robust refinements and **clarification questioning**.
-  * **NVIDIA NIM** (`/generate-thread-nim` endpoint) — user-selectable via frontend dropdown; supports Qwen3 235B/397B, Llama 3.3 70B, Mistral Large 2, DeepSeek R1. Streams SSE directly to the browser via `httpx`. Goes through the same Groq clarification loop before generation.
-  * **Pro Mode** (toggle in UI): Both Gemini and NIM support Standard (fast, single call) and Pro (full 5-agent pipeline) modes:
-    * **Gemini Standard:** Single direct Gemini LLM call (bypasses DSPy). **Gemini Pro:** Full DSPy 5-step workflow (unchanged).
-    * **NIM Standard:** Single NIM call with mega-prompt. **NIM Pro:** 5 sequential NIM API calls (Refiner → Research → HookSmith → Drafter → Editor) with real-time brain step animation.
-    * Pro quota: 3 generations/IP/day (`pro_daily_limit` in `config.py`), tracked via `pro_count` column in `ip_rate_limits` Supabase table. `/pro-quota` endpoint returns remaining quota.
-    * Loss-aversion framing, scarcity badge, and "✨ RECOMMENDED" ribbon for future monetization psychology.
+  * **NVIDIA NIM** (`/generate-thread-nim` endpoint) — user-selectable via frontend dropdown; supports Qwen3 235B/397B, Llama 3.3 70B, Mistral Large 2, DeepSeek R1. Streams SSE directly to the browser.
+  * **Pro Mode** (toggle in UI):
+    * **Gemini Pro:** Full DSPy 5-step workflow (unchanged).
+    * **NIM Pro (Overhauled):** Optimized to prevent `ReadTimeout` on large models. Collapsed from 5 sequential steps to **3 (Twitter)** or **2 (LinkedIn)**.
+      * **Step 1: Master Intelligence** — Merges Refiner + Architect + Research + Hooks into one single planning call. Capped at 2500 tokens to bound runaway Qwen3 CoT burn.
+      * **Step 2/3: Drafter & Editor** — Drafter utilizes strict XML tags (`<hook>`, `<tweet>`, etc.) for precision. **LinkedIn early-exit**: Drafter streams directly, Editor is skipped to save API calls.
+      * **Think-Token State Machine:** Built-in buffer filters `<think>...</think>` tags mid-stream, even if split across chunks, ensuring a clean UI.
+    * Pro quota: 3 generations/IP/day (`pro_daily_limit` in `config.py`), tracked via Supabase. ✨ RECOMMENDED ribbon for NIM models.
+  * Both Gemini and NIM helpers feature internal stream-and-collect or direct streaming to keep TCP connections alive.
   * Both Gemini wrappers feature Round-Robin key rotation to handle rate limits (HTTP 429).
 * **Frontend:** Included in the `Frontend/` directory (UI for inputs, generation progress, and interactive refinement).
 * **Workflows & Agents (BMAD):** The project includes a comprehensive agent persona system under the `_bmad/` and `.agent/` directories.

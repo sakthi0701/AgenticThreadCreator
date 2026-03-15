@@ -5,7 +5,6 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.concurrency import run_in_threadpool
-from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 import ast
 import uuid # [NEW] For correlation IDs
@@ -311,114 +310,53 @@ async def generate_thread_endpoint(request: ThreadRequest):
 # --- GEMINI STANDARD: Direct Single-Call Helper ---
 def run_gemini_direct(topic, platform, template, audience, tone, forbidden_words, style_analysis):
     """
-    Single Gemini call with a comprehensive system prompt that embeds
-    all 5 agent perspectives: Refiner, Researcher, HookSmith, Drafter, Editor.
-    Returns dict with {hook, tweets, cta, tldr} matching DSPy output shape.
+    Single Gemini call using the GenerateSocialThread storytelling signature.
     """
-    style_str = f"\nVoice/Style Analysis: {style_analysis}" if style_analysis else ""
-
-    if platform == "LinkedIn":
-        format_block = """Format STRICTLY as:
-HOOK: <a single punchy opening line>
-BODY:
-<paragraph 1>
-<paragraph 2>
-<paragraph 3>
-(IMPORTANT: Use short, crisp paragraphs. Maximum 1-2 sentences per paragraph. Use bullet points or line breaks for readability. Never output giant walls of text.)
-CTA: <clear call to action>
-TLDR: <one line summary>"""
-    else:
-        format_block = """Format STRICTLY as:
-HOOK: <a single punchy opening tweet>
-TWEETS:
-1. <tweet 1 — max 280 chars>
-2. <tweet 2 — max 280 chars>
-3. <tweet 3 — max 280 chars>
-4. <tweet 4 — max 280 chars>
-5. <tweet 5 — max 280 chars>
-CTA: <clear call to action tweet>
-TLDR: <one line summary>"""
-
-    system_prompt = f"""You are an expert content creator. Create a {platform} thread/post about the given topic.
-
-Think through these 5 lenses before writing:
-1. REFINER: What is the sharpest, most specific angle? What makes this unique?
-2. RESEARCHER: What concrete facts, stats, or examples support this angle?
-3. HOOK SMITH: What opening line would stop someone from scrolling?
-4. DRAFTER: Structure the content for maximum readability on {platform}.
-5. EDITOR: Strip all jargon, corporate-speak, and filler. Make it human and direct.
-
-Context:
-- Platform: {platform}
-- Template style: {template}
-- Target audience: {audience or 'General'}
-- Tone: {tone or 'Professional and engaging'}
-- Forbidden words: {forbidden_words}{style_str}
-
-{format_block}
-
-RULES: No forbidden words. Be specific and concrete. No corporate jargon. Every sentence must add value."""
-
+    from dspy_module import GenerateSocialThread
     try:
-        import google.generativeai as genai
-        from dspy_module import MultiKeyGemini
+        # 1. Prediction using the new signature logic
+        result = dspy.Predict(GenerateSocialThread)(
+            topic=topic,
+            audience=audience or "General",
+            platform=platform,
+            style_notes=f"Template: {template}\nTone: {tone}\n{style_analysis or ''}",
+            forbidden_words=forbidden_words
+        )
+        
+        # 2. Parse body into paragraphs/tweets
+        raw_body = result.body.strip()
+        body_parts = [p.strip() for p in raw_body.split('\n\n') if p.strip()]
+        
+        # Twitter safety: Split long paragraphs if they exceed 280 chars
+        if platform == "Twitter":
+            final_tweets = []
+            for part in body_parts:
+                if len(part) <= 280:
+                    final_tweets.append(part)
+                else:
+                    # Naive split by sentence or character if sentence is too long
+                    import re as _re
+                    sentences = _re.split(r'(?<=[.!?])\s+', part)
+                    current_chunk = ""
+                    for sent in sentences:
+                        if len(current_chunk) + len(sent) + 1 <= 280:
+                            current_chunk += (sent + " ")
+                        else:
+                            if current_chunk: final_tweets.append(current_chunk.strip())
+                            current_chunk = sent + " "
+                    if current_chunk: final_tweets.append(current_chunk.strip())
+            body_parts = final_tweets
 
-        # Use the existing configured DSPy LM (already has keys loaded)
-        result = dspy.Predict("topic -> content")(topic=f"{system_prompt}\n\nTopic: {topic}")
-        raw_text = result.content
-
-        # Parse structured output
-        return _parse_gemini_standard_output(raw_text, platform)
+        return {
+            "hook": result.hook,
+            "tweets": body_parts,
+            "cta": result.cta,
+            "tldr": "" # standard mode usually skips TLDR now for speed
+        }
 
     except Exception as e:
         print(f"Gemini Standard Error: {e}")
         return {"hook": "Generation failed", "tweets": [str(e)], "cta": "Please try again", "tldr": "Error occurred"}
-
-
-def _parse_gemini_standard_output(raw_text, platform):
-    """Parse HOOK/TWEETS|BODY/CTA/TLDR from raw Gemini output."""
-    lines = raw_text.split('\n')
-    hook = ''
-    tweets = []
-    cta = ''
-    tldr = ''
-    section = None
-    body_buffer = []
-
-    for line in lines:
-        trimmed = line.strip()
-        if trimmed.upper().startswith('HOOK:'):
-            hook = trimmed[5:].strip()
-            section = 'hook'
-        elif trimmed.upper() in ('TWEETS:', 'BODY:'):
-            section = 'tweets'
-        elif trimmed.upper().startswith('CTA:'):
-            cta = trimmed[4:].strip()
-            section = 'cta'
-        elif trimmed.upper().startswith('TLDR:'):
-            tldr = trimmed[5:].strip()
-            section = 'tldr'
-        elif section == 'tweets' and trimmed:
-            import re
-            cleaned = re.sub(r'^\d+[.)\s]+', '', trimmed).strip()
-            if cleaned:
-                body_buffer.append(cleaned)
-        elif section == 'cta' and trimmed and not cta:
-            cta = trimmed
-        elif section == 'tldr' and trimmed and not tldr:
-            tldr = trimmed
-
-    tweets = body_buffer if body_buffer else tweets
-
-    # Fallback if parsing fails
-    if not hook and not tweets:
-        parts = raw_text.split('\n\n')
-        parts = [p.strip() for p in parts if p.strip()]
-        hook = parts[0] if parts else raw_text[:100]
-        tweets = parts[1:-1] if len(parts) > 2 else parts[1:] if len(parts) > 1 else []
-        cta = parts[-1] if len(parts) > 1 else ''
-
-    return {"hook": hook, "tweets": tweets, "cta": cta, "tldr": tldr}
 
 
 @app.get("/profiles")
@@ -619,9 +557,6 @@ async def analyze_style_endpoint(request: StyleRequest):
         print(f"API: Error analyzing style: {e}")
         return {"error": str(e)}
 
-        print(f"API: Error analyzing style: {e}")
-        return {"error": str(e)}
-
 # --- 9. NVIDIA NIM Streaming Endpoint ---
 @app.post("/generate-thread-nim")
 async def generate_thread_nim_endpoint(request: NimThreadRequest):
@@ -727,132 +662,330 @@ TLDR: <one line summary>"""
         print(f"NIM API: [PRO] Running 5-step agent chain with {request.model}")
 
         async def nim_agent_chain():
-            """5 sequential NIM calls. Steps 1-4 non-streaming, Step 5 streaming."""
+            """
+            Optimised NIM Pro chain:
+              Twitter:  Master Blueprint → Research → Hook Smith → [Drafter collect] → Editor stream (4 calls)
+              LinkedIn: Master Blueprint → Research → Hook Smith → Drafter stream, skip Editor  (3 calls)
+            """
+            import re as _re
+
+            # ─── Helper: parse XML tags from raw text ──────────────────────────────
+            def _extract_xml(text, tag):
+                """Return list of all <tag>...</tag> contents, stripped."""
+                return [m.strip() for m in _re.findall(
+                    rf'<{tag}>(.*?)</{tag}>', text, flags=_re.DOTALL | _re.IGNORECASE
+                )]
+
+            def _first_xml(text, tag, default=""):
+                vals = _extract_xml(text, tag)
+                return vals[0] if vals else default
+
+            def _parse_final_xml(text):
+                """Parse structured fields from XML-tagged output."""
+                hook  = _first_xml(text, "hook")
+                cta   = _first_xml(text, "cta")
+                tldr  = _first_xml(text, "tldr")
+                tweets = _extract_xml(text, "tweet")
+                bodies = _extract_xml(text, "body")
+                thread_body = _first_xml(text, "thread_body")
+
+                # If thread_body is present, split it into parts for the frontend
+                if thread_body and not tweets and not bodies:
+                    bodies = [p.strip() for p in thread_body.split('\n\n') if p.strip()]
+
+                # Fallback to plain-text parser if XML extraction found nothing
+                if not hook and not tweets and not bodies:
+                    return None  # signal caller to use full_text as-is
+
+                return {
+                    "hook":   hook,
+                    "tweets": tweets if tweets else bodies,
+                    "cta":    cta,
+                    "tldr":   tldr,
+                }
+
+            # ─── Helper: think-token buffer state machine ──────────────────────────
+            # Yields safe text chunks, buffering partial <think>/</think> tags.
+            OPEN_TAG  = "<think>"
+            CLOSE_TAG = "</think>"
+
+            async def _filtered_stream(response):
+                """
+                Async generator that yields (token_text) with <think>…</think>
+                blocks removed, even when tags are split across SSE chunks.
+                """
+                buf      = ""
+                in_think = False
+
+                async for line in response.aiter_lines():
+                    if not line.startswith("data: "):
+                        continue
+                    raw = line[6:]
+                    if raw == "[DONE]":
+                        break
+                    try:
+                        chunk  = json.loads(raw)
+                        token  = (chunk.get("choices", [{}])[0]
+                                      .get("delta", {})
+                                      .get("content", "") or "")
+                        if not token:
+                            continue
+                    except Exception:
+                        continue
+
+                    buf += token
+                    while True:
+                        if in_think:
+                            end = buf.find(CLOSE_TAG)
+                            if end >= 0:
+                                buf      = buf[end + len(CLOSE_TAG):]
+                                in_think = False
+                            else:
+                                # Keep partial tag tail in buffer
+                                buf = buf[max(0, len(buf) - len(CLOSE_TAG) + 1):]
+                                break
+                        else:
+                            start = buf.find(OPEN_TAG)
+                            if start >= 0:
+                                to_yield = buf[:start]
+                                if to_yield:
+                                    yield to_yield
+                                buf      = buf[start + len(OPEN_TAG):]
+                                in_think = True
+                            else:
+                                # Yield all but keep a partial-tag guard tail
+                                safe     = max(0, len(buf) - len(OPEN_TAG) + 1)
+                                to_yield = buf[:safe]
+                                buf      = buf[safe:]
+                                if to_yield:
+                                    yield to_yield
+                                break
+
+                # Flush remaining buffer (stream ended with no open <think>)
+                if buf and not in_think:
+                    yield buf
+
+            # ─── Twitter / LinkedIn XML format definitions ─────────────────────────
+            if request.platform == "LinkedIn":
+                xml_format = """Output format — use these XML tags:
+<hook>Single punchy opening line</hook>
+<thread_body>
+The entire body here. Use natural short paragraphs (1-2 sentences max) and double line breaks between them.
+</thread_body>
+<cta>Clear call to action</cta>"""
+            else:
+                xml_format = """Output format — use these XML tags:
+<hook>Opening tweet that stops scrollers</hook>
+<thread_body>
+The entire content of the thread. Keep each section short so it fits in a tweet (~280 chars).
+Separate distinct sections/tweets with a double newline (\n\n).
+</thread_body>
+<cta>Call to action tweet — max 280 chars</cta>"""
+
             full_text = []
 
             try:
-                # Step 1: REFINER
-                refiner_prompt = f"""You are the Refiner Agent. Given a topic, extract the sharpest, most compelling angle.
-Output:
-ANGLE: <one sentence describing the sharpest angle>
-INSIGHT: <the core non-obvious insight>
-AUDIENCE_HOOK: <what makes this relevant to the target audience>
+                # ══════════════════════════════════════════════════════════════════
+                # STEP 1 — MASTER INTELLIGENCE
+                # Blueprint + Research evidence + 3 Hooks — all in ONE call
+                # Capped at 3000 tokens to prevent Qwen3 CoT from timing out
+                # ══════════════════════════════════════════════════════════════════
+                master_prompt = f"""You are the Master Story Architect for a {request.platform} content pipeline.
+Your job is NOT to write corporate advice. Your job is to find the "Micro-to-Macro Pivot" for the given topic.
 
-Context: Platform={request.platform}, Audience={request.audience or 'General'}, Tone={request.tone or 'Professional'}{style_str}"""
+Great content starts with a highly specific, mundane, or vulnerable observation (the Micro) and connects it to a profound, universal lesson (the Macro). 
 
-                yield f"data: {json.dumps({'type': 'step', 'step': 1, 'label': 'Refiner Agent: Finding the sharpest angle...'})}\n\n"
-                refiner_out = await _nim_call(nim_headers, request.model, refiner_prompt, user_message)
+Context:
+- Platform: {request.platform}
+- Topic: {request.topic}
+- Audience: {request.audience or 'General'}
 
-                # Step 2: RESEARCH
-                yield f"data: {json.dumps({'type': 'step', 'step': 2, 'label': 'Research Agent: Gathering facts & context...'})}\n\n"
-                research_prompt = f"""You are the Research Agent. Given the topic and the Refiner's angle, add concrete supporting evidence.
-Include: specific facts, statistics, real-world examples, analogies, and counter-arguments to preempt.
+Output EXACTLY this structure:
+REFINED_ANGLE: <A one-sentence summary of the counter-intuitive or personal angle we will take>
+THE_MICRO_HOOK: <A specific, relatable scenario, conversation, or vulnerable admission to start the post>
+THE_MACRO_LESSON: <The core business/life takeaway that the Micro story proves>
+SUPPORTING_DETAIL: <One specific observation or realization that connects the Micro to the Macro>
+HOOK_1: <A 1-2 sentence opening that challenges a common belief about the topic>
+HOOK_2: <A 1-2 sentence opening that starts in the middle of a story or conversation>
+BEST_HOOK: <1 or 2>"""
 
-Refiner's Analysis:
-{refiner_out}
+                yield f"data: {json.dumps({'type': 'step', 'step': 1, 'label': 'Master Intelligence: Analysing topic, researching & crafting hooks...'})}\n\n"
+                # Thinking disabled for Master step: on Qwen3, extended CoT burns the
+                # entire token budget on reasoning before writing any output.
+                # We need a structured plain-text brief here, not deep reasoning.
+                master_out = await _nim_call(
+                    nim_headers, request.model, master_prompt, user_message,
+                    max_tokens=3500, enable_thinking=False
+                )
+                print(f"NIM PRO [1/Master]: {master_out[:120]}...")
 
-Output a detailed research brief (3-5 bullet points with sources/examples)."""
-                research_out = await _nim_call(nim_headers, request.model, research_prompt, user_message)
+                # Extract key fields
+                def _field(text, key):
+                    m = _re.search(rf'^{key}:\s*(.+)', text, _re.MULTILINE | _re.IGNORECASE)
+                    return m.group(1).strip() if m else ""
 
-                # Step 3: HOOK SMITH
-                yield f"data: {json.dumps({'type': 'step', 'step': 3, 'label': 'Hook Smith: Crafting viral opening hooks...'})}\n\n"
-                hook_prompt = f"""You are the Hook Smith Agent. Create 3 viral opening hooks for a {request.platform} post.
-Each hook should stop scrollers dead. Use the Refiner's angle and Research data.
+                psych_trigger = _field(master_out, "PSYCHOLOGICAL_TRIGGER") or "Curiosity"
+                refined_topic = _field(master_out, "REFINED_TOPIC") or request.topic[:120]
 
-Refiner's Analysis: {refiner_out}
-Research Brief: {research_out}
+                # ══════════════════════════════════════════════════════════════════
+                # STEP 4 — DRAFTER  (collect for Twitter, stream for LinkedIn)
+                # ══════════════════════════════════════════════════════════════════
+                drafter_prompt = f"""You are the Drafter Agent. Write the complete, publish-ready {request.platform} post based on the Master Brief.
 
-Output:
-HOOK_1: <hook option 1>
-HOOK_2: <hook option 2>
-HOOK_3: <hook option 3>
-BEST: <which hook number is best and why in 1 sentence>"""
-                hooks_out = await _nim_call(nim_headers, request.model, hook_prompt, user_message)
+Master Intelligence Brief:
+{master_out}
 
-                # Step 4: DRAFTER
-                yield f"data: {json.dumps({'type': 'step', 'step': 4, 'label': 'Drafter Agent: Building the full thread...'})}\n\n"
-                drafter_prompt = f"""You are the Drafter Agent. Build the complete {request.platform} thread.
-Use the best hook from the Hook Smith, incorporate the Research data, follow the Refiner's angle.
+VOICE & STYLE RULES (CRITICAL):
+1. Formatting (Broetry): Write in short, punchy lines. Paragraphs must NEVER exceed 2 sentences. Use frequent line breaks.
+2. Tone: Humble, reflective, and conversational. Position yourself as a curious student sharing a realization, NOT a guru giving a lecture. 
+3. Vocabulary: Use plain, 5th-grade English. Zero corporate jargon. (e.g., Use "use" instead of "leverage", "fix" instead of "optimize").
+4. Structure:
+   - Start with the BEST_HOOK.
+   - Introduce the Micro story (set the scene briefly).
+   - Pivot to the Macro lesson.
+   - End with a single, punchy, philosophical takeaway.
 
-Refiner's Analysis: {refiner_out}
-Research Brief: {research_out}
-Hook Options: {hooks_out}
-Forbidden words: {forbidden_str}
+FORBIDDEN WORDS: {forbidden_str}
 
-{format_instructions}"""
-                draft_out = await _nim_call(nim_headers, request.model, drafter_prompt, user_message)
+{xml_format}
 
-                # Step 5: EDITOR (streaming)
-                yield f"data: {json.dumps({'type': 'step', 'step': 5, 'label': 'Editor Agent: Polishing & humanizing...'})}\n\n"
-                editor_prompt = f"""You are the Editor Agent. Polish this draft for maximum impact.
-- Strip all jargon, corporate-speak, filler words
-- Ensure forbidden words ({forbidden_str}) are NOT used
-- Humanize the tone: {request.tone or 'Professional and engaging'}
-- Ensure each tweet/paragraph is concise and punchy
-- Output the FINAL polished version{style_str}
+CRITICAL: Output ONLY the XML-tagged content. No preamble, no explanation."""
 
-{format_instructions}
+                drafter_payload = {
+                    "model": request.model,
+                    "messages": [
+                        {"role": "system", "content": drafter_prompt},
+                        {"role": "user", "content": f"Write the complete {request.platform} post now. Output ONLY XML-tagged content."}
+                    ],
+                    "max_tokens": 16384,
+                    "temperature": 0.65,
+                    "top_p": 0.95,
+                    "stream": True
+                }
+                if "qwen3" in request.model.lower():
+                    drafter_payload["chat_template_kwargs"] = {"enable_thinking": True}
 
-Draft to polish:
-{draft_out}"""
+                stream_headers = {**nim_headers, "Accept": "text/event-stream"}
 
-                # Stream the editor's output
+                if request.platform == "LinkedIn":
+                    # ── LinkedIn: stream Drafter output directly to frontend ──────
+                    yield f"data: {json.dumps({'type': 'step', 'step': 2, 'label': 'Drafter Agent: Writing your LinkedIn post...'})}\n\n"
+
+                    async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, read=300.0)) as client:
+                        async with client.stream(
+                            "POST", "https://integrate.api.nvidia.com/v1/chat/completions",
+                            headers=stream_headers, json=drafter_payload
+                        ) as response:
+                            if response.status_code != 200:
+                                err = await response.aread()
+                                yield f"data: {json.dumps({'error': f'NIM Drafter error {response.status_code}: {err.decode()[:200]}'})}\n\n"
+                                return
+
+                            async for token in _filtered_stream(response):
+                                full_text.append(token)
+                                yield f"data: {json.dumps({'type': 'chunk', 'content': token})}\n\n"
+
+                    complete_text = "".join(full_text)
+                    parsed = _parse_final_xml(complete_text)
+                    done_payload = {
+                        "type": "done",
+                        "full_text": complete_text,
+                        "interaction_id": interaction_id
+                    }
+                    if parsed:
+                        done_payload.update(parsed)
+                    yield f"data: {json.dumps(done_payload)}\n\n"
+
+                    log_interaction(
+                        ip=current_ip, action_type="GENERATE_NIM_PRO",
+                        input_data=request.topic,
+                        output_data={"model": request.model, "raw_output": complete_text[:500]},
+                        meta={"platform": "LinkedIn", "model": request.model, "mode": "pro", "steps": 2},
+                        interaction_id=interaction_id
+                    )
+                    return  # LinkedIn done — skip Editor
+
+                else:
+                    # ── Twitter: collect Drafter output, then stream Editor ────────
+                    yield f"data: {json.dumps({'type': 'step', 'step': 2, 'label': 'Drafter Agent: Building the full thread...'})}\n\n"
+                    draft_out = await _nim_call(nim_headers, request.model, drafter_prompt,
+                                               f"Write the complete Twitter thread now. Output ONLY XML-tagged content.")
+                    print(f"NIM PRO [2/Drafter]: {draft_out[:120]}...")
+
+                # ══════════════════════════════════════════════════════════════════
+                # STEP 5 — EDITOR  (Twitter only, streaming with think-token filter)
+                # ══════════════════════════════════════════════════════════════════
+                editor_prompt = f"""You are the Constraint Checker. Your ONLY job is to verify and fix structural constraints. Do NOT rewrite the tone, voice, or style.
+
+CHECK THESE CONSTRAINTS:
+1. Character limits: {"Every tweet boundary (blank line) must split sections into ≤ 280 characters." if request.platform == "Twitter" else "No hard limit, but paragraphs should be 1-2 sentences max."}
+2. Forbidden words — remove any occurrences: {forbidden_str}
+3. Paragraph length: No paragraph longer than 2 sentences.
+4. No markdown formatting (**, ##, etc.) — plain text only.
+
+{xml_format}
+
+Draft to check (XML-tagged):
+{draft_out}
+
+Output ONLY the corrected XML-tagged version. If it's already perfect, output it as-is."""
+
                 editor_payload = {
                     "model": request.model,
                     "messages": [
                         {"role": "system", "content": editor_prompt},
-                        {"role": "user", "content": "Polish and finalize this thread. Output ONLY the final formatted version."}
+                        {"role": "user", "content": "Output the polished thread in STRICT XML tags only."}
                     ],
                     "max_tokens": 16384,
-                    "temperature": 0.50,
+                    "temperature": 0.45,
                     "top_p": 0.95,
                     "stream": True
                 }
                 if "qwen3" in request.model.lower():
                     editor_payload["chat_template_kwargs"] = {"enable_thinking": True}
 
-                async with httpx.AsyncClient(timeout=120.0) as client:
-                    async with client.stream("POST",
-                        "https://integrate.api.nvidia.com/v1/chat/completions",
-                        headers=nim_headers, json=editor_payload
+                yield f"data: {json.dumps({'type': 'step', 'step': 3, 'label': 'Editor Agent: Polishing & humanizing...'})}\n\n"
+
+                async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, read=300.0)) as client:
+                    async with client.stream(
+                        "POST", "https://integrate.api.nvidia.com/v1/chat/completions",
+                        headers=stream_headers, json=editor_payload
                     ) as response:
                         if response.status_code != 200:
-                            error_body = await response.aread()
-                            yield f"data: {json.dumps({'error': f'NIM Editor error {response.status_code}: {error_body.decode()[:200]}'})}\n\n"
+                            err = await response.aread()
+                            yield f"data: {json.dumps({'error': f'NIM Editor error {response.status_code}: {err.decode()[:200]}'})}\n\n"
                             return
 
-                        async for line in response.aiter_lines():
-                            if line.startswith("data: "):
-                                raw = line[6:]
-                                if raw == "[DONE]":
-                                    break
-                                try:
-                                    chunk = json.loads(raw)
-                                    choices = chunk.get("choices", [])
-                                    if not choices:
-                                        continue
-                                    delta = choices[0].get("delta", {})
-                                    content = delta.get("content", "") or ""
-                                    if content:
-                                        full_text.append(content)
-                                        yield f"data: {json.dumps({'type': 'chunk', 'content': content})}\n\n"
-                                except Exception:
-                                    pass
+                        async for token in _filtered_stream(response):
+                            full_text.append(token)
+                            yield f"data: {json.dumps({'type': 'chunk', 'content': token})}\n\n"
 
                 complete_text = "".join(full_text)
-                yield f"data: {json.dumps({'type': 'done', 'full_text': complete_text, 'interaction_id': interaction_id})}\n\n"
+                parsed = _parse_final_xml(complete_text)
+                done_payload = {
+                    "type": "done",
+                    "full_text": complete_text,
+                    "interaction_id": interaction_id
+                }
+                if parsed:
+                    done_payload.update(parsed)
+                yield f"data: {json.dumps(done_payload)}\n\n"
 
                 log_interaction(
                     ip=current_ip, action_type="GENERATE_NIM_PRO",
                     input_data=request.topic,
                     output_data={"model": request.model, "raw_output": complete_text[:500]},
-                    meta={"platform": request.platform, "model": request.model, "mode": "pro"},
+                    meta={"platform": request.platform, "model": request.model, "mode": "pro", "steps": 4},
                     interaction_id=interaction_id
                 )
 
             except Exception as e:
-                print(f"NIM PRO chain error: {e}")
-                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+                import traceback
+                error_detail = repr(e)
+                print(f"NIM PRO chain error: {error_detail}")
+                print(f"NIM PRO traceback: {traceback.format_exc()}")
+                yield f"data: {json.dumps({'error': f'Pro chain failed: {error_detail}'})}\n\n"
+
 
         return StreamingResponse(
             nim_agent_chain(),
@@ -957,38 +1090,80 @@ IMPORTANT: Do NOT use ANY of the forbidden words. Be specific, concrete, and val
         )
 
 
-# --- NIM Agent Helper: non-streaming call ---
-async def _nim_call(headers, model, system_prompt, user_msg):
-    """Make a single non-streaming NIM API call and return the text."""
+# --- NIM Agent Helper: streaming-collect call ---
+async def _nim_call(headers, model, system_prompt, user_msg, max_tokens: int = None, enable_thinking: bool = True):
+    """
+    Makes a NIM API call using stream=True internally and collects all chunks.
+    This avoids httpx.ReadTimeout on slow/large models (e.g. Qwen3 397B) where
+    a non-streaming call holds the connection silently for minutes before timing out.
+    Tokens start flowing immediately in stream mode, keeping the connection alive.
+
+    max_tokens: optional override — use a lower value for intermediate steps to
+                prevent Qwen3 CoT from consuming the entire token budget on reasoning.
+    enable_thinking: set False for planning/brief steps where Qwen3 CoT would
+                     exhaust the entire token budget before writing any output.
+    """
     import re
+    is_qwen3 = "qwen3" in model.lower()
+    # Use caller-supplied cap, else default per model family
+    # Qwen3 thinking mode burns extra tokens on CoT reasoning
+    if max_tokens is not None:
+        max_tok = max_tokens
+    else:
+        max_tok = 8192 if is_qwen3 else 4096
+
     payload = {
         "model": model,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_msg}
         ],
-        "max_tokens": 4096,
+        "max_tokens": max_tok,
         "temperature": 0.60,
         "top_p": 0.95,
-        "stream": False
+        "stream": True  # Use streaming to keep TCP connection alive
     }
-    if "qwen3" in model.lower():
-        payload["chat_template_kwargs"] = {"enable_thinking": True}
+    if is_qwen3:
+        payload["chat_template_kwargs"] = {"enable_thinking": enable_thinking}
 
-    async with httpx.AsyncClient(timeout=120.0) as client:
-        resp = await client.post(
+    # Use stream_headers: Accept text/event-stream
+    stream_headers = {**headers, "Accept": "text/event-stream"}
+
+    collected = []
+    async with httpx.AsyncClient(timeout=httpx.Timeout(10.0, read=300.0)) as client:
+        async with client.stream(
+            "POST",
             "https://integrate.api.nvidia.com/v1/chat/completions",
-            headers=headers, json=payload
-        )
-        if resp.status_code != 200:
-            raise Exception(f"NIM API error {resp.status_code}: {resp.text[:200]}")
-        data = resp.json()
-        choices = data.get("choices", [])
-        if not choices:
-            raise Exception("NIM returned empty choices")
-        text = choices[0].get("message", {}).get("content", "")
-        text = re.sub(r'<think>[\s\S]*?</think>', '', text).strip()
-        return text
+            headers=stream_headers,
+            json=payload
+        ) as response:
+            if response.status_code != 200:
+                error_body = await response.aread()
+                raise Exception(f"NIM API error {response.status_code}: {error_body.decode()[:300]}")
+
+            async for line in response.aiter_lines():
+                if line.startswith("data: "):
+                    raw = line[6:]
+                    if raw == "[DONE]":
+                        break
+                    try:
+                        chunk = json.loads(raw)
+                        delta = chunk.get("choices", [{}])[0].get("delta", {})
+                        token = delta.get("content", "") or ""
+                        if token:
+                            collected.append(token)
+                    except Exception:
+                        pass
+
+    raw_content = "".join(collected)
+    # Strip <think>...</think> blocks produced by Qwen3 extended thinking
+    text = re.sub(r'<think>[\s\S]*?</think>', '', raw_content, flags=re.IGNORECASE).strip()
+    if not text and raw_content:
+        # Greedy fallback: non-greedy regex stripped everything (unclosed tag edge case)
+        text = re.sub(r'<think>[\s\S]*</think>', '', raw_content, flags=re.IGNORECASE).strip()
+    if not text:
+        raise Exception(f"NIM returned empty content after stripping. Raw snippet: {raw_content[:300]}")
+    return text
 
 
 # --- 9b. Pro Quota Endpoint ---

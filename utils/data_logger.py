@@ -24,10 +24,14 @@ def log_interaction(ip: str, action_type: str, input_data: str, output_data: dic
     Uses a bounded thread pool to prevent memory leaks.
     """
     if not _supabase:
+        print("⚠️ Supabase: No client configured. Logging skipped.")
         return
 
     def _log():
         try:
+            # Debug: Which project are we logging to?
+            url = os.environ.get("SUPABASE_URL_log") or os.environ.get("SUPABASE_URL")
+            
             data = {
                 "ip_address": ip,
                 "action_type": action_type,
@@ -38,10 +42,14 @@ def log_interaction(ip: str, action_type: str, input_data: str, output_data: dic
                 "parent_id": parent_id,
                 "created_at": datetime.now().isoformat()
             }
-            _supabase.table("thread_interactions").insert(data).execute()
+            # print(f"DEBUG: Logging to {url} table 'thread_interactions'")
+            res = _supabase.table("thread_interactions").insert(data).execute()
+            if res.data:
+                print(f"✅ Supabase Log Success: {action_type} for {ip} [{res.data[0].get('id', 'no-id')}]")
+            else:
+                print(f"⚠️ Supabase Log returned no data: {res}")
         except Exception as e:
-            # Silent fail in production, but print for now
-            print(f"⚠️ Failed to log to Supabase: {e}")
+            print(f"❌ Failed to log to Supabase: {e}")
 
     # Submit to thread pool (bounded, prevents leak)
     _log_executor.submit(_log)
