@@ -29,12 +29,24 @@ MANIFEST
 # Virtual Environments
 .env
 .venv
+.venv/
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
 myenv/
+myenv
+
+# Node/Frontend
+node_modules/
+.next/
+
+# Testing
+.pytest_cache/
+
+# Data Caches and Reports
+report.json
 
 # Logs and Debug
 *.log
